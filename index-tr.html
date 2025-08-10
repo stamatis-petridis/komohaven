@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Blue Dream & Studio 9 — Komotini Kiralık Daireler</title>
+    <meta
+      name="description"
+      content="Komotini'de iki şık daire: Blue Dream ve Studio 9. Doğrudan rezervasyon."
+    />
+    <link rel="icon" href="assets/favicon.png" />
+    <link rel="alternate" hreflang="en" href="index.html" />
+    <link rel="alternate" hreflang="el" href="index-gr.html" />
+    <link rel="alternate" hreflang="tr" href="index-tr.html" />
+    <link rel="alternate" hreflang="bg" href="index-bg.html" />
+    <link rel="preload" href="assets/hero.jpg" as="image" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">Blue Dream & Studio 9</a>
+        <nav>
+          <a href="#bluedream">Blue Dream</a>
+          <a href="#studio9">Studio 9</a>
+          <a href="#location">Konum</a>
+          <a href="#contact" class="btn">Rezervasyon</a>
+          <span class="pill" style="margin-left: 12px">
+            <a href="index.html" aria-label="English">🇬🇧</a> ·
+            <a href="index-gr.html" aria-label="Ελληνικά">🇬🇷</a> · 🇹🇷 ·
+            <a href="index-bg.html" aria-label="Български">🇧🇬</a>
+          </span>
+        </nav>
+      </div>
+    </header>
+
+    <!-- You can keep all content in English for now and translate gradually -->
+    <section id="top" class="hero">
+      <picture>
+        <img
+          src="assets/hero.jpg"
+          alt="Komotini'de Aegean atmosferi"
+          loading="eager"
+          style="display: block; width: 100%; height: 62vh; object-fit: cover"
+        />
+      </picture>
+      <div class="hero-text container">
+        <h1>İki konaklama. Tek basit rezervasyon.</h1>
+        <p>
+          Merkeze yakın <strong>Blue Dream</strong> veya Komotini merkezinde
+          <strong>Studio 9</strong>.
+        </p>
+        <div class="cta">
+          <a class="btn" href="#bluedream">Blue Dream'i keşfet</a>
+          <a class="btn outline" href="#studio9">Studio 9'u keşfet</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reuse the same sections as index.html; translate when ready -->
+    <main class="container">
+      <!-- copy sections from index.html here if you want full TR now -->
+      <section class="location" id="location">
+        <h2>Konum</h2>
+        <iframe
+          id="map"
+          src="https://www.google.com/maps?q=Komotini,+Greece&hl=tr&z=14&output=embed"
+          width="100%"
+          height="350"
+          style="border-radius: 12px; margin-bottom: 1.5rem"
+          frameborder="0"
+        ></iframe>
+      </section>
+
+      <section id="contact" class="contact">
+        <h2>Doğrudan Rezervasyon</h2>
+        <p>Komisyon yok. Tarihlerinizi gönderin—kısa sürede dönüş yaparız.</p>
+        <div class="alt-contact">
+          <a class="btn outline" href="tel:+306932647201">Ara</a>
+          <a
+            class="btn outline"
+            href="https://wa.me/306932647201"
+            target="_blank"
+            rel="noopener"
+            >WhatsApp</a
+          >
+          <a class="btn outline" href="mailto:rodipasx@gmail.com">Email</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="bg">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Blue Dream & Studio 9 — Апартаменти под наем в Комотини</title>
+    <meta
+      name="description"
+      content="Два стилни апартамента в Комотини: Blue Dream и Studio 9. Резервирайте директно."
+    />
+    <link rel="icon" href="assets/favicon.png" />
+    <link rel="alternate" hreflang="en" href="index.html" />
+    <link rel="alternate" hreflang="el" href="index-gr.html" />
+    <link rel="alternate" hreflang="tr" href="index-tr.html" />
+    <link rel="alternate" hreflang="bg" href="index-bg.html" />
+    <link rel="preload" href="assets/hero.jpg" as="image" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">Blue Dream & Studio 9</a>
+        <nav>
+          <a href="#bluedream">Blue Dream</a>
+          <a href="#studio9">Studio 9</a>
+          <a href="#location">Местоположение</a>
+          <a href="#contact" class="btn">Резервация</a>
+          <span class="pill" style="margin-left: 12px">
+            <a href="index.html" aria-label="English">🇬🇧</a> ·
+            <a href="index-gr.html" aria-label="Ελληνικά">🇬🇷</a> ·
+            <a href="index-tr.html" aria-label="Türkçe">🇹🇷</a> · 🇧🇬
+          </span>
+        </nav>
+      </div>
+    </header>
+
+    <section id="top" class="hero">
+      <picture>
+        <img
+          src="assets/hero.jpg"
+          alt="Егеинско усещане в Комотини"
+          loading="eager"
+          style="display: block; width: 100%; height: 62vh; object-fit: cover"
+        />
+      </picture>
+      <div class="hero-text container">
+        <h1>Две места за престой. Една лесна резервация.</h1>
+        <p>
+          Изберете <strong>Blue Dream</strong> близо до центъра или
+          <strong>Studio 9</strong> в Комотини.
+        </p>
+        <div class="cta">
+          <a class="btn" href="#bluedream">Разгледайте Blue Dream</a>
+          <a class="btn outline" href="#studio9">Разгледайте Studio 9</a>
+        </div>
+      </div>
+    </section>
+
+    <main class="container">
+      <section class="location" id="location">
+        <h2>Местоположение</h2>
+        <iframe
+          id="map"
+          src="https://www.google.com/maps?q=Komotini,+Greece&hl=bg&z=14&output=embed"
+          width="100%"
+          height="350"
+          style="border-radius: 12px; margin-bottom: 1.5rem"
+          frameborder="0"
+        ></iframe>
+      </section>
+
+      <section id="contact" class="contact">
+        <h2>Директна резервация</h2>
+        <p>
+          Без такси за платформи. Изпратете желаните дати — ще отговорим бързо.
+        </p>
+        <div class="alt-contact">
+          <a class="btn outline" href="tel:+306932647201">Телефон</a>
+          <a
+            class="btn outline"
+            href="https://wa.me/306932647201"
+            target="_blank"
+            rel="noopener"
+            >WhatsApp</a
+          >
+          <a class="btn outline" href="mailto:rodipasx@gmail.com">Email</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
