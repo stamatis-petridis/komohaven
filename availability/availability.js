@@ -1,4 +1,4 @@
-const AVAILABILITY_ENDPOINT = "/availability/availability.json";
+const AVAILABILITY_ENDPOINT = new URL("./availability.json", import.meta.url).toString();
 // Cache the fetch promise so multiple widgets on the page reuse the same request.
 let availabilityCachePromise;
 
