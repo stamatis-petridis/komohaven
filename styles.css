@@ -198,6 +198,93 @@ main {
   flex-direction: column;
   gap: 6px;
 }
+
+.availability {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 24px;
+  border-radius: 16px;
+}
+.availability-calendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.availability-month {
+  background: rgba(18, 19, 22, 0.6);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.availability-month h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.availability-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.availability-table th {
+  padding: 4px 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.availability-table td {
+  padding: 6px 0;
+  font-size: 0.85rem;
+  text-align: center;
+  border-radius: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.availability-table td.empty {
+  background: transparent;
+}
+.availability-table td.past {
+  color: var(--muted);
+  opacity: 0.4;
+}
+.availability-table td.today {
+  outline: 1px solid var(--brand);
+  font-weight: 600;
+}
+.availability-table td.booked {
+  background: rgba(255, 77, 77, 0.16);
+  border: 1px solid rgba(255, 77, 77, 0.6);
+  color: #ff4d4d;
+}
+.availability-legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.legend-swatch.booked {
+  background: rgba(255, 77, 77, 0.16);
+  border-color: rgba(255, 77, 77, 0.6);
+}
+.legend-swatch.today {
+  border-color: var(--brand);
+}
 .form-row input,
 .form-row select,
 .form-row textarea {

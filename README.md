@@ -62,6 +62,30 @@ This project was built step by step as a **learning journey**:
 
 ---
 
+## 📅 Availability Toolkit
+
+- The `availability/` workspace pulls live iCal feeds (Airbnb, Booking, …) defined in `.env` and produces the JSON consumed by the property pages.
+- Install dependencies once (inside a virtualenv if you prefer):
+  ```bash
+  cd availability
+  pip install -r requirements.txt
+  ```
+- Populate `availability/.env` with the export URLs (already in place) and regenerate the JSON when bookings change:
+  ```bash
+  cd availability
+  python build_availability_json.py
+  ```
+  which writes `availability/availability.json`. Property pages fetch this file to render the availability calendar widget.
+
+---
+
+## 🗂 Asset Organization
+
+- Shared site assets (e.g. hero, favicon) live under `assets/`.
+- Property-specific media sits alongside each page in `properties/<slug>/assets/`, so everything needed for Blue Dream or Studio 9 is self-contained.
+
+---
+
 ## 🙏 Acknowledgment
 
 This project was the **first ever live website** built for my business.
