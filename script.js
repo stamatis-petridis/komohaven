@@ -1,3 +1,21 @@
+const CONTACT = {
+  phoneE164: "+306932647201",
+  whatsappNumber: "306932647201",
+};
+
+const CONTACT_LINKS = {
+  tel: `tel:${CONTACT.phoneE164}`,
+  whatsapp: `https://wa.me/${CONTACT.whatsappNumber}`,
+};
+
+document.querySelectorAll('[data-contact="phone"]').forEach((el) => {
+  el.setAttribute("href", CONTACT_LINKS.tel);
+});
+
+document.querySelectorAll('[data-contact="whatsapp"]').forEach((el) => {
+  el.setAttribute("href", CONTACT_LINKS.whatsapp);
+});
+
 // Prefill “Rental” when clicking “Request dates” buttons
 document
   .querySelectorAll('a.btn[href="#contact"][data-rental]')
