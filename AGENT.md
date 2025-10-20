@@ -95,9 +95,15 @@ This document orients an autonomous agent that maintains or extends the Komotini
 - **Workflow:** From the repo root run:
   ```bash
   cd availability
+  pip install -r requirements.txt
   python build_availability_json.py
+  cd ..
+  git add availability/availability.json
+  git commit -m "chore: update availability feeds"
+  git push
   ```
-  This pulls the live feeds defined in `.env` and writes the combined payload to `availability/availability.json`.
+  Pushing to `main` triggers the Cloudflare Pages deploy (repository `komohaven`).
+- **Shortcut:** Execute `./push_availability.sh` from the repo root to perform the full sequence (install, rebuild, commit, push) automatically (run `chmod +x push_availability.sh` once if needed).
 - **Front-end:** Property detail pages fetch `/availability/availability.json` and render it via `/availability/availability.js`.
 - **Usage notes:** Environment keys must follow `<PROPERTY>_ICAL_URL_<SOURCE>` so the script can auto-discover feeds. Keep the toolkit lightweight (stdlib Python + vanilla JS) and update this guide when workflows change to stay in sync with the main site.
 Use this guide as the operational reference when planning changes, triaging tasks, or validating updates.

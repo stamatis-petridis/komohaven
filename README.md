@@ -70,12 +70,22 @@ This project was built step by step as a **learning journey**:
   cd availability
   pip install -r requirements.txt
   ```
-- Populate `availability/.env` with the export URLs (already in place) and regenerate the JSON when bookings change:
+- Populate `availability/.env` with the export URLs (already in place) and regenerate the JSON when bookings change, then commit and push so Cloudflare Pages redeploys:
   ```bash
   cd availability
+  pip install -r requirements.txt
   python build_availability_json.py
+  cd ..
+  git add availability/availability.json
+  git commit -m "chore: update availability feeds"
+  git push
   ```
   which writes `availability/availability.json`. Property pages fetch this file to render the availability calendar widget.
+- Shortcut: run the helper script from the repo root to execute the same steps in one go:
+  ```bash
+  chmod +x push_availability.sh  # first time only
+  ./push_availability.sh
+  ```
 
 ---
 
