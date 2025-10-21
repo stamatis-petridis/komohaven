@@ -94,13 +94,11 @@ This document orients an autonomous agent that maintains or extends the Komotini
 - **Dependencies:** Install/update Python packages from `availability/requirements.txt` (currently `python-dotenv`) before running scripts.
 - **Workflow:** From the repo root run:
   ```bash
-  cd availability
-  pip install -r requirements.txt
-  python build_availability_json.py
-  cd ..
-  git add availability/availability.json
-  git commit -m "chore: update availability feeds"
-  git push
+pip install -r availability/requirements.txt
+python availability/build_availability_json.py
+git add availability/availability.json
+git commit -m "chore: update availability feeds"
+git push
   ```
   Pushing to `main` triggers the Cloudflare Pages deploy (repository `komohaven`).
 - **Shortcut:** Execute `./push_availability.sh` from the repo root to perform the full sequence (install, rebuild, commit, push) automatically (run `chmod +x push_availability.sh` once if needed).

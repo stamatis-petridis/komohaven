@@ -6,10 +6,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
 echo "Installing/updating availability dependencies..."
-pip install -r availability/requirements.txt
+python3 -m pip install -r availability/requirements.txt
 
 echo "Building availability JSON from live feeds..."
-python availability/build_availability_json.py
+python3 availability/build_availability_json.py
 
 echo "Committing updated availability feed..."
 git add availability/availability.json
