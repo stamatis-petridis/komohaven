@@ -10,6 +10,17 @@ It includes **direct booking options**, **map integrations**, and **multi-langua
 
 ---
 
+## 🔁 Quick Availability Refresh
+
+- Activate your virtual environment (`source .venv/bin/activate` or similar).
+- From the repo root run:
+  ```bash
+  ./push_availability.sh
+  ```
+  The helper script installs requirements, rebuilds `availability/availability.json`, commits, and pushes so Cloudflare Pages redeploys. Run `chmod +x push_availability.sh` once if it is not yet executable.
+
+---
+
 ## ✨ Features
 
 - Responsive design with hero image and property galleries.
@@ -72,11 +83,11 @@ This project was built step by step as a **learning journey**:
   ```
 - Populate `availability/.env` with the export URLs (already in place) and regenerate the JSON when bookings change, then commit and push so Cloudflare Pages redeploys:
   ```bash
-pip install -r availability/requirements.txt
-python availability/build_availability_json.py
-git add availability/availability.json
-git commit -m "chore: update availability feeds"
-git push
+  python -m pip install -r availability/requirements.txt
+  python availability/build_availability_json.py
+  git add availability/availability.json
+  git commit -m "chore: update availability feeds"
+  git push
   ```
   which writes `availability/availability.json`. Property pages fetch this file to render the availability calendar widget.
 - Shortcut: run the helper script from the repo root to execute the same steps in one go:
