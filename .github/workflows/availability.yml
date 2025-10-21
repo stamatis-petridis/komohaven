@@ -1,0 +1,49 @@
+name: Update availability
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes
+  workflow_dispatch: {}       # manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: python -m pip install -r availability/requirements.txt
+
+      - name: Write .env
+        run: |
+          cat > availability/.env <<'ENV'
+          BLUE_DREAM_ICAL_URL_AIRBNB=${{ secrets.BLUE_DREAM_ICAL_URL_AIRBNB }}
+          BLUE_DREAM_ICAL_URL_BOOKING=${{ secrets.BLUE_DREAM_ICAL_URL_BOOKING }}
+          STUDIO9_ICAL_URL_AIRBNB=${{ secrets.STUDIO9_ICAL_URL_AIRBNB }}
+          STUDIO9_ICAL_URL_BOOKING=${{ secrets.STUDIO9_ICAL_URL_BOOKING }}
+          ENV
+
+      - name: Build JSON
+        run: python availability/build_availability_json.py
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet availability/availability.json; then
+            echo "No changes detected."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add availability/availability.json
+            git commit -m "chore(availability): auto-update feed"
+            git push
+          fi
