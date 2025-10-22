@@ -1,74 +1,107 @@
-const CONTACT = {
-  phoneE164: "+306932647201",
-  whatsappNumber: "306932647201",
-};
+(() => {
+  const CONTACT = {
+    phoneE164: "+306932647201",
+    whatsappNumber: "306932647201",
+    email: "rodipasx@gmail.com",
+  };
 
-const CONTACT_LINKS = {
-  tel: `tel:${CONTACT.phoneE164}`,
-  whatsapp: `https://wa.me/${CONTACT.whatsappNumber}`,
-};
+  const domReady = (fn) => {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+      fn();
+    }
+  };
 
-document.querySelectorAll('[data-contact="phone"]').forEach((el) => {
-  el.setAttribute("href", CONTACT_LINKS.tel);
-});
-
-document.querySelectorAll('[data-contact="whatsapp"]').forEach((el) => {
-  el.setAttribute("href", CONTACT_LINKS.whatsapp);
-});
-
-// Prefill “Rental” when clicking “Request dates” buttons
-document
-  .querySelectorAll('a.btn[href="#contact"][data-rental]')
-  .forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const v = btn.getAttribute("data-rental");
-      const select = document.getElementById("rental");
-      if (select) {
-        select.value = v;
-      }
+  const setContactLinks = () => {
+    document.querySelectorAll('[data-contact="phone"]').forEach((el) => {
+      el.setAttribute("href", `tel:${CONTACT.phoneE164}`);
     });
+
+    document
+      .querySelectorAll('[data-contact="whatsapp"]').forEach((el) => {
+        el.setAttribute("href", `https://wa.me/${CONTACT.whatsappNumber}`);
+      });
+  };
+
+  const initRentalPrefill = () => {
+    const buttons = document.querySelectorAll("[data-prefill-rental]");
+    if (!buttons.length) return;
+
+    buttons.forEach((btn) => {
+      const value = btn.dataset.prefillRental;
+      const targetSelector = btn.dataset.prefillTarget || "[data-booking-form]";
+
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(targetSelector).forEach((targetForm) => {
+          const rentalField = targetForm.querySelector('[name="rental"]');
+          if (rentalField) rentalField.value = value;
+        });
+      });
+    });
+  };
+
+  const buildMailtoLink = (form) => {
+    const data = Object.fromEntries(new FormData(form).entries());
+    const subject = `Booking request — ${data.rental ?? ""}`;
+    const body = [
+      `Rental: ${data.rental ?? ""}`,
+      `Check-in: ${data.checkin ?? ""}`,
+      `Check-out: ${data.checkout ?? ""}`,
+      `Guests: ${data.guests ?? ""}`,
+      `Name: ${data.name ?? ""}`,
+      `Email: ${data.email ?? ""}`,
+      data.message ? `Notes: ${data.message}` : null,
+    ]
+      .filter(Boolean)
+      .join("%0D%0A");
+
+    return `mailto:${CONTACT.email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${body}`;
+  };
+
+  const initBookingForms = () => {
+    const forms = document.querySelectorAll("form[data-booking-form]");
+    if (!forms.length) return;
+
+    forms.forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        window.location.href = buildMailtoLink(form);
+      });
+    });
+  };
+
+  const updateYear = () => {
+    document.querySelectorAll("#year").forEach((el) => {
+      el.textContent = String(new Date().getFullYear());
+    });
+  };
+
+  const initLeafletMap = () => {
+    if (typeof L === "undefined") return;
+    const mapContainer = document.querySelector('[data-map="leaflet"]');
+    if (!mapContainer) return;
+
+    const center = [41.116112, 25.399783];
+    const studio = [41.112899, 25.408472];
+
+    const map = L.map(mapContainer).setView(center, 15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    L.marker(center).addTo(map).bindPopup("Blue Dream").openPopup();
+    L.marker(studio).addTo(map).bindPopup("Studio 9");
+  };
+
+  domReady(() => {
+    setContactLinks();
+    initRentalPrefill();
+    initBookingForms();
+    updateYear();
+    initLeafletMap();
   });
-
-// Mailto builder for static submit
-const form = document.getElementById("bookingForm");
-form?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(form).entries());
-  const subject = `Booking request — ${data.rental}`;
-  const body = [
-    `Rental: ${data.rental}`,
-    `Check-in: ${data.checkin}`,
-    `Check-out: ${data.checkout}`,
-    `Guests: ${data.guests}`,
-    `Name: ${data.name}`,
-    `Email: ${data.email}`,
-    data.message ? `Notes: ${data.message}` : null,
-  ]
-    .filter(Boolean)
-    .join("%0D%0A");
-
-  // TODO: replace with your preferred email
-  const to = "rodipasx@gmail.com";
-  window.location.href = `mailto:${to}?subject=${encodeURIComponent(
-    subject
-  )}&body=${body}`;
-});
-
-// Footer year
-
-document.getElementById("year").textContent = String(new Date().getFullYear());
-
-// Leaflet map initialization
-// Assumes there is a <div id="map"></div> in the HTML and Leaflet CSS/JS are loaded
-const blueDreamCoords = [41.116112, 25.399783];
-const studio9Coords = [41.112899, 25.408472];
-const map = L.map("map").setView(blueDreamCoords, 15);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-}).addTo(map);
-const blueDreamMarker = L.marker(blueDreamCoords)
-  .addTo(map)
-  .bindPopup("Blue Dream")
-  .openPopup();
-L.marker(studio9Coords).addTo(map).bindPopup("Studio 9");
+})();

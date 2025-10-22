@@ -159,7 +159,7 @@
               <li>🛏 Queen bed + sofa bed</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-rental="Blue Dream"
+              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Blue Dream"
                 >Request dates</a
               >
               <a
@@ -222,7 +222,7 @@
               <li>❄️ A/C</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-rental="Studio 9"
+              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Studio 9"
                 >Request dates</a
               >
               <a
@@ -265,7 +265,7 @@
           hours.
         </p>
 
-        <form id="bookingForm">
+        <form id="bookingForm" data-booking-form>
           <div class="form-row">
             <label for="rental">Rental</label>
             <select id="rental" name="rental" required>

@@ -160,7 +160,7 @@
               <li>🛏 Διπλό κρεβάτι + καναπές-κρεβάτι</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-rental="Blue Dream"
+              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Blue Dream"
                 >Αίτημα ημερομηνιών</a
               >
               <a
@@ -223,7 +223,7 @@
               <li>❄️ Κλιματισμός</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-rental="Studio 9"
+              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Studio 9"
                 >Αίτημα ημερομηνιών</a
               >
               <a
@@ -267,7 +267,7 @@
           απαντάμε σύντομα.
         </p>
 
-        <form id="bookingForm">
+        <form id="bookingForm" data-booking-form>
           <div class="form-row">
             <label for="rental">Διαμέρισμα</label>
             <select id="rental" name="rental" required>

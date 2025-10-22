@@ -15,7 +15,7 @@ This document orients an autonomous agent that maintains or extends the Komotini
 - `index-*.html` — localized variants. Keep section IDs, data attributes, and structural markup identical to the English version to preserve styling and JS hooks.
 - `styles.css` — global styling; single file, no preprocessor. Theme colors defined as CSS variables at top of file.
 - `script.js` — lightweight behavior:
-  - Prefills the rental selector from CTA buttons (`data-rental`).
+  - Prefills the rental selector from CTA buttons (`data-prefill-rental`).
   - Generates a `mailto:` URL on booking form submit.
   - Injects current year into footer element with `id="year"`.
   - Initializes a Leaflet map; expects Leaflet CSS/JS loaded in the HTML template and `div#map` present.
@@ -28,8 +28,8 @@ This document orients an autonomous agent that maintains or extends the Komotini
 ## 3. Workflow Expectations
 
 - **Local preview:** Open HTML files directly in a browser or use a lightweight static server (e.g., VS Code Live Server). No package manager or build commands are required.
-- **Cross-language parity:** When editing layout or features, update every localized HTML file to keep markup synchronized. Text content should be translated while preserving anchors, IDs, aria attributes, `data-rental` values, and link targets.
-- **Contact & booking CTAs:** Ensure any new CTA button linking to `#contact` includes `data-rental="Blue Dream"` or `"Studio 9"` if relevant so the prefill continues to work.
+- **Cross-language parity:** When editing layout or features, update every localized HTML file to keep markup synchronized. Text content should be translated while preserving anchors, IDs, aria attributes, `data-prefill-rental` values, and link targets.
+- **Contact & booking CTAs:** Ensure any new CTA button linking to `#contact` includes `data-prefill-rental="Blue Dream"` (or `"Studio 9"`) and `data-prefill-target` so the prefill continues to work.
 - **Map section:** The map depends on Leaflet; confirm script and stylesheet tags remain present and that `div#map` is retained across translations.
 
 ## 4. Content Editing Guidelines
