@@ -126,7 +126,7 @@ function updateNotes(noteEls, ranges, updated) {
 }
 
 // Render a multi-month calendar highlighting booked ranges.
-function renderCalendar(container, ranges, { months = 4 } = {}) {
+function renderCalendar(container, ranges, { months = 3 } = {}) {
   container.innerHTML = "";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
