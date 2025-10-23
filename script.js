@@ -5,6 +5,11 @@
     email: "rodipasx@gmail.com",
   };
 
+  const MAP_LINKS = {
+    "blue-dream": "https://maps.app.goo.gl/4yh65CaNSKpPbDjH8",
+    "studio-9": "https://maps.app.goo.gl/UnqJnzg1pjv87f8z8",
+  };
+
   const domReady = (fn) => {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", fn, { once: true });
@@ -16,12 +21,33 @@
   const setContactLinks = () => {
     document.querySelectorAll('[data-contact="phone"]').forEach((el) => {
       el.setAttribute("href", `tel:${CONTACT.phoneE164}`);
+      el.removeAttribute("target");
+      el.removeAttribute("rel");
     });
 
     document
       .querySelectorAll('[data-contact="whatsapp"]').forEach((el) => {
         el.setAttribute("href", `https://wa.me/${CONTACT.whatsappNumber}`);
+        el.setAttribute("target", "_blank");
+        el.setAttribute("rel", "noopener");
       });
+
+    document.querySelectorAll('[data-contact="email"]').forEach((el) => {
+      el.setAttribute("href", `mailto:${CONTACT.email}`);
+      el.removeAttribute("target");
+      el.removeAttribute("rel");
+    });
+  };
+
+  const setMapLinks = () => {
+    document.querySelectorAll("[data-map-link]").forEach((el) => {
+      const key = el.dataset.mapLink;
+      const href = MAP_LINKS[key] || "";
+      if (!href) return;
+      el.setAttribute("href", href);
+      el.setAttribute("target", "_blank");
+      el.setAttribute("rel", "noopener");
+    });
   };
 
   const initRentalPrefill = () => {
@@ -162,6 +188,7 @@
 
   domReady(() => {
     setContactLinks();
+    setMapLinks();
     initRentalPrefill();
     initBookingForms();
     initLightbox();

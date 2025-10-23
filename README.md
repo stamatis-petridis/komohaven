@@ -5,19 +5,8 @@ A multilingual static website for two rental properties in Komotini, Greece:
 - **Blue Dream** (near center, 1BR, 2 guests)
 - **Studio 9** (central studio, 1–2 guests)
 
-The site is built with **HTML, CSS, and JS**, and hosted via **GitHub Pages**.
+The site is built with **HTML, CSS, and JS**, and hosted on **Cloudflare Pages**.
 It includes **direct booking options**, **map integrations**, and **multi-language support** (EN, EL, TR, BG).
-
----
-
-## 🔁 Quick Availability Refresh
-
-- Activate your virtual environment (`source .venv/bin/activate` or similar).
-- From the repo root run:
-  ```bash
-  ./push_availability.sh
-  ```
-  The helper script installs requirements, rebuilds `availability/availability.json`, commits, and pushes so Cloudflare Pages redeploys. Run `chmod +x push_availability.sh` once if it is not yet executable.
 
 ---
 
@@ -73,31 +62,6 @@ This project was built step by step as a **learning journey**:
 
 ---
 
-## 📅 Availability Toolkit
-
-- The `availability/` workspace pulls live iCal feeds (Airbnb, Booking, …) defined in `.env` and produces the JSON consumed by the property pages.
-- Install dependencies once (inside a virtualenv if you prefer):
-  ```bash
-  cd availability
-  python -m pip install -r requirements.txt
-  ```
-- Populate `availability/.env` with the export URLs (already in place) and regenerate the JSON when bookings change, then commit and push so Cloudflare Pages redeploys:
-  ```bash
-  python -m pip install -r availability/requirements.txt
-  python availability/build_availability_json.py
-  git add availability/availability.json
-  git commit -m "chore: update availability feeds"
-  git push
-  ```
-  which writes `availability/availability.json`. Property pages fetch this file to render the availability calendar widget.
-- Shortcut: run the helper script from the repo root to execute the same steps in one go:
-  ```bash
-  chmod +x push_availability.sh  # first time only
-  ./push_availability.sh
-  ```
-
----
-
 ## 🗂 Asset Organization
 
 - Shared site assets (e.g. hero, favicon) live under `assets/`.
@@ -109,3 +73,9 @@ This project was built step by step as a **learning journey**:
 
 This project was the **first ever live website** built for my business.
 It marks the starting point of combining **cloud, Git, and web skills** into a real-world digital asset.
+
+---
+
+### Maintainers
+
+For deployment runbooks (availability feed refresh, form endpoints, etc.) see [`AGENT.md`](AGENT.md).

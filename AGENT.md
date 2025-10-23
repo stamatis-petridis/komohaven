@@ -2,11 +2,29 @@
 
 This document orients an autonomous agent that maintains or extends the Komotini rentals marketing site contained in this repository.
 
+## 0. Common Operations
+
+- **Refresh availability feed (preferred):**
+  ```bash
+  ./push_availability.sh
+  ```
+  The helper script installs Python deps, rebuilds `availability/availability.json`, commits, and pushes so Cloudflare Pages redeploys. Run `chmod +x push_availability.sh` once if needed.
+- **Refresh availability feed (manual fallback):**
+  ```bash
+  python -m pip install -r availability/requirements.txt
+  python availability/build_availability_json.py
+  git add availability/availability.json
+  git commit -m "chore: update availability feeds"
+  git push
+  ```
+- **Inspect submissions:** Cloudflare Pages → project → Forms → `booking` form.
+- **Update contact/map info:** edit the `CONTACT` and `MAP_LINKS` constants in `script.js`; HTML should keep only `data-contact` / `data-map-link` hooks.
+
 ## 1. Project Snapshot
 
 - **Type:** Static multilingual marketing site for two short-stay rentals (Blue Dream and Studio 9).
 - **Stack:** Hand-authored HTML, shared CSS (`styles.css`), vanilla JS (`script.js`), and static assets in `assets/`.
-- **Hosting:** GitHub Pages serving files from the repository root; no build or bundling step.
+- **Hosting:** Cloudflare Pages (repo `komohaven`, branch `main`); purely static deployment.
 - **Languages:** English (`index.html`) plus Greek (`index-gr.html`), Turkish (`index-tr.html`), Bulgarian (`index-bg.html`).
 
 ## 2. Repository Layout
@@ -42,7 +60,9 @@ This document orients an autonomous agent that maintains or extends the Komotini
 ## 5. JavaScript Considerations
 
 - The `mailto:` builder concatenates form data; keep field `name` attributes stable unless you update `script.js`.
-- Default recipient email is `rodipasx@gmail.com`; change in both form copy and `script.js` when updating contact info.
+- Phone/WhatsApp/email links pull from the `CONTACT` object in `script.js`; update those constants instead of hard-coding values in HTML.
+- Default recipient email is `rodipasx@gmail.com`; change it in `CONTACT.email` (and any copy references) when updating contact info.
+- Property map links pull from the `MAP_LINKS` registry in `script.js`; adjusting a map URL only requires editing that object.
 - `L` (Leaflet global) must be available before `script.js` runs. When adding new pages, include Leaflet assets or gate map code accordingly.
 
 ## 6. Styling Notes
