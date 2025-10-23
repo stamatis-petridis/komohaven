@@ -73,6 +73,69 @@
     });
   };
 
+  const initLightbox = () => {
+    const galleryImages = document.querySelectorAll(".gallery img");
+    if (!galleryImages.length) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "lightbox";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML = `
+      <button type="button" class="lightbox__close" aria-label="Close photo">&times;</button>
+      <img class="lightbox__image" alt="" />
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeBtn = overlay.querySelector(".lightbox__close");
+    const overlayImg = overlay.querySelector(".lightbox__image");
+    let lastActiveImage = null;
+
+    const closeLightbox = () => {
+      overlay.classList.remove("is-active");
+      overlay.setAttribute("aria-hidden", "true");
+      overlayImg.src = "";
+      overlayImg.alt = "";
+      document.body.classList.remove("lightbox-open");
+      if (lastActiveImage) {
+        lastActiveImage.focus({ preventScroll: true });
+      }
+    };
+
+    const openLightbox = (img) => {
+      lastActiveImage = img;
+      overlayImg.src = img.dataset.full || img.src;
+      overlayImg.alt = img.alt || "";
+      overlay.classList.add("is-active");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.classList.add("lightbox-open");
+      closeBtn.focus({ preventScroll: true });
+    };
+
+    overlay.addEventListener("click", () => {
+      closeLightbox();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && overlay.classList.contains("is-active")) {
+        closeLightbox();
+      }
+    });
+
+    galleryImages.forEach((img) => {
+      img.setAttribute("tabindex", "0");
+      img.addEventListener("click", () => openLightbox(img));
+      img.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openLightbox(img);
+        }
+      });
+    });
+  };
+
   const updateYear = () => {
     document.querySelectorAll("#year").forEach((el) => {
       el.textContent = String(new Date().getFullYear());
@@ -101,6 +164,7 @@
     setContactLinks();
     initRentalPrefill();
     initBookingForms();
+    initLightbox();
     updateYear();
     initLeafletMap();
   });
