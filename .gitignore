@@ -4,3 +4,8 @@
 availability/.env
 availability/.env.*
 !availability/.env.example
+
+# Archived high-res assets
+properties/blue-dream/assets/old/
+properties/studio-9/assets/old/
+old/
