@@ -91,8 +91,10 @@ async function enhanceBlock(root, slug) {
   try {
     const { updated, booked } = await fetchAvailability(slug);
     const ranges = normalizeRanges(booked);
+    const propertyLabel = getPropertyLabel(root, slug);
     renderCalendar(calendarEl, ranges);
     ensureLegend(root);
+    setupRangeSelection(calendarEl, propertyLabel);
     updateNotes(noteEls, ranges, updated);
   } catch (error) {
     console.error("Availability error", error);
@@ -222,6 +224,7 @@ function applyDayState(td, date, today, ranges) {
     td.classList.add("booked");
     td.setAttribute("aria-label", `${dateLabel(date)} (booked)`);
   } else {
+    decorateFreeDay(td, date);
     td.setAttribute("aria-label", `${dateLabel(date)} (available)`);
   }
 
@@ -280,6 +283,175 @@ function createLegend() {
   legend.appendChild(booked);
   legend.appendChild(today);
   return legend;
+}
+
+function getPropertyLabel(root, slug) {
+  if (!root) return slug || "";
+  const label = root.getAttribute("data-property-label");
+  if (label) return label;
+  if (!slug) return "";
+  return slug
+    .split(/[-_\s]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function decorateFreeDay(td, date) {
+  td.classList.add("free-day");
+  td.setAttribute("role", "button");
+  td.tabIndex = 0;
+  td.setAttribute("data-start", formatISODate(date));
+}
+
+const rangeSelectionStates = new WeakMap();
+
+function setupRangeSelection(calendarEl, propertyLabel) {
+  if (!calendarEl) return;
+  let state = rangeSelectionStates.get(calendarEl);
+  if (!state) {
+    state = {
+      propertyLabel,
+      startCell: null,
+      startDate: null,
+    };
+    rangeSelectionStates.set(calendarEl, state);
+
+    const clearSelection = () => {
+      if (state.startCell) {
+        state.startCell.classList.remove("is-selecting");
+      }
+      state.startCell = null;
+      state.startDate = null;
+    };
+
+    const handleActivation = (cell) => {
+      if (!cell || !cell.dataset.start) return;
+      const selectedDate = toLocalDate(cell.dataset.start);
+      if (!selectedDate) return;
+
+      if (!state.startDate || selectedDate < state.startDate) {
+        clearSelection();
+        state.startCell = cell;
+        state.startDate = selectedDate;
+        cell.classList.add("is-selecting");
+        return;
+      }
+
+      const isContinuous = isContinuousFreeRange(
+        calendarEl,
+        state.startDate,
+        selectedDate
+      );
+
+      if (!isContinuous) {
+        clearSelection();
+        state.startCell = cell;
+        state.startDate = selectedDate;
+        cell.classList.add("is-selecting");
+        return;
+      }
+
+      const startStr = formatISODate(state.startDate);
+      const endStr = formatISODate(selectedDate);
+      const label = state.propertyLabel || propertyLabel || "";
+      const launched = openWhatsApp(label, startStr, endStr);
+      clearSelection();
+      if (!launched) {
+        console.warn("WhatsApp contact number is not available.");
+      }
+    };
+
+    calendarEl.addEventListener("click", (event) => {
+      const target =
+        event.target && typeof event.target.closest === "function"
+          ? event.target.closest(".free-day")
+          : null;
+      if (!target) return;
+      handleActivation(target);
+    });
+
+    calendarEl.addEventListener("keydown", (event) => {
+      const target =
+        event.target && typeof event.target.closest === "function"
+          ? event.target.closest(".free-day")
+          : null;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        clearSelection();
+        if (target) {
+          target.classList.remove("is-selecting");
+          if (typeof target.blur === "function") {
+            target.blur();
+          }
+        }
+        return;
+      }
+
+      if (!target) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleActivation(target);
+      }
+    });
+
+    state.clearSelection = clearSelection;
+  }
+
+  state.propertyLabel = propertyLabel;
+  if (typeof state.clearSelection === "function") {
+    state.clearSelection();
+  }
+}
+
+function isContinuousFreeRange(container, startDate, endDate) {
+  if (!container || !startDate || !endDate) return false;
+  const cursor = new Date(startDate);
+  cursor.setHours(0, 0, 0, 0);
+  const limit = new Date(endDate);
+  limit.setHours(0, 0, 0, 0);
+
+  while (cursor <= limit) {
+    const selector = `.free-day[data-start="${formatISODate(cursor)}"]`;
+    const cell = container.querySelector(selector);
+    if (!cell) return false;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return true;
+}
+
+function resolveWhatsAppNumber() {
+  const link = document.querySelector('[data-contact="whatsapp"]');
+  if (!link) return null;
+  const href = link.getAttribute("href") || "";
+  const match = href.match(/wa\.me\/(\d+)/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  const text = link.textContent || "";
+  const digits = text.replace(/\D+/g, "");
+  return digits || null;
+}
+
+function openWhatsApp(propertyLabel, start, end) {
+  const number = resolveWhatsAppNumber();
+  if (!number) return false;
+  const labelText = propertyLabel || "your property";
+  const message = `Hello! I'm interested in ${labelText} from ${start} to ${end}.`;
+  const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  const win = window.open(url, "_blank", "noopener");
+  if (win && typeof win.opener !== "undefined") {
+    win.opener = null;
+  }
+  return true;
+}
+
+function formatISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 // Initialize widgets once the DOM is ready.

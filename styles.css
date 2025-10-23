@@ -257,6 +257,15 @@ main {
   border: 1px solid rgba(255, 77, 77, 0.6);
   color: #ff4d4d;
 }
+
+.free-day {
+  cursor: pointer;
+}
+
+.free-day.is-selecting {
+  outline: 2px solid var(--brand);
+}
+
 .availability-legend {
   display: flex;
   gap: 16px;
