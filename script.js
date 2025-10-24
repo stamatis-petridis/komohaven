@@ -170,8 +170,12 @@
 
   const initLeafletMap = () => {
     if (typeof L === "undefined") return;
-    const mapContainer = document.querySelector('[data-map="leaflet"]');
-    if (!mapContainer) return;
+    const mapContainer =
+      document.querySelector('[data-map="leaflet"]') ||
+      (document.getElementById("map") instanceof HTMLDivElement
+        ? document.getElementById("map")
+        : null);
+    if (!(mapContainer instanceof HTMLDivElement)) return;
 
     const center = [41.116112, 25.399783];
     const studio = [41.112899, 25.408472];

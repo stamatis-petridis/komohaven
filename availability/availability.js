@@ -88,13 +88,14 @@ async function enhanceBlock(root, slug) {
     }
   });
 
+  // Load availability data, render the calendar UI, and wire up interactions.
   try {
     const { updated, booked } = await fetchAvailability(slug);
     const ranges = normalizeRanges(booked);
     const propertyLabel = getPropertyLabel(root, slug);
     renderCalendar(calendarEl, ranges);
     ensureLegend(root);
-    setupRangeSelection(calendarEl, propertyLabel);
+    setupRangeSelection(root, calendarEl, propertyLabel);
     updateNotes(noteEls, ranges, updated);
   } catch (error) {
     console.error("Availability error", error);
@@ -119,8 +120,8 @@ function updateNotes(noteEls, ranges, updated) {
     : null;
   const hasBookings = ranges.length > 0;
   const message = hasBookings
-    ? `Booked dates are highlighted below. Updated ${updatedLabel || "recently"}.`
-    : `No bookings on the calendar yet. Updated ${updatedLabel || "recently"}.`;
+    ? `Select your stay dates to message us on WhatsApp. Booked dates are highlighted below. Updated ${updatedLabel || "recently"}.`
+    : `Select your stay dates to message us on WhatsApp. No bookings on the calendar yet. Updated ${updatedLabel || "recently"}.`;
 
   noteEls.forEach((el) => {
     el.textContent = message;
@@ -285,6 +286,7 @@ function createLegend() {
   return legend;
 }
 
+// Derive a human-friendly property label from DOM attributes or fallback slug.
 function getPropertyLabel(root, slug) {
   if (!root) return slug || "";
   const label = root.getAttribute("data-property-label");
@@ -297,6 +299,7 @@ function getPropertyLabel(root, slug) {
     .join(" ");
 }
 
+// Mark a day cell as selectable and annotate it with metadata for range selection.
 function decorateFreeDay(td, date) {
   td.classList.add("free-day");
   td.setAttribute("role", "button");
@@ -304,37 +307,175 @@ function decorateFreeDay(td, date) {
   td.setAttribute("data-start", formatISODate(date));
 }
 
+// Remove previously applied range highlight classes within a calendar.
+function clearVisualRange(container) {
+  if (!container) return;
+  container
+    .querySelectorAll(
+      ".range-start, .range-mid, .range-end, .range-single"
+    )
+    .forEach((cell) => {
+      cell.classList.remove(
+        "range-start",
+        "range-mid",
+        "range-end",
+        "range-single"
+      );
+    });
+}
+
+// Highlight the inclusive date range across free-day cells.
+function markVisualRange(container, startISO, endISO) {
+  if (!container || !startISO) return;
+  const startDate = toLocalDate(startISO);
+  const endDate = toLocalDate(endISO || startISO);
+  if (!startDate || !endDate || endDate < startDate) return;
+
+  const cells = [];
+  const cursor = new Date(startDate);
+  const final = new Date(endDate);
+
+  while (cursor <= final) {
+    const iso = formatISODate(cursor);
+    const cell = container.querySelector(`.free-day[data-start="${iso}"]`);
+    if (cell) cells.push(cell);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  if (!cells.length) return;
+
+  if (cells.length === 1) {
+    cells[0].classList.add("range-single");
+    return;
+  }
+
+  cells[0].classList.add("range-start");
+  cells[cells.length - 1].classList.add("range-end");
+
+  for (let i = 1; i < cells.length - 1; i += 1) {
+    cells[i].classList.add("range-mid");
+  }
+}
+
 const rangeSelectionStates = new WeakMap();
 
-function setupRangeSelection(calendarEl, propertyLabel) {
+// Make sure the inline CTA bar exists (or create it) and return its controls.
+function ensureAvailabilityCTA(root) {
+  if (!root) return null;
+  let bar = root.querySelector("[data-availability-cta]");
+  const calendar = root.querySelector("[data-availability-calendar]");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.className = "availability-cta";
+    bar.setAttribute("data-availability-cta", "");
+    bar.hidden = true;
+
+    const summary = document.createElement("p");
+    summary.className = "availability-cta-summary";
+    summary.setAttribute("data-availability-summary", "");
+    bar.appendChild(summary);
+
+    const actions = document.createElement("div");
+    actions.className = "availability-cta-actions";
+
+    const sendBtn = document.createElement("button");
+    sendBtn.type = "button";
+    sendBtn.className = "btn";
+    sendBtn.setAttribute("data-availability-send", "");
+    sendBtn.textContent = "Send via WhatsApp";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn outline";
+    cancelBtn.setAttribute("data-availability-cancel", "");
+    cancelBtn.textContent = "Cancel";
+
+    actions.appendChild(sendBtn);
+    actions.appendChild(cancelBtn);
+    bar.appendChild(actions);
+
+    if (calendar && calendar.parentNode) {
+      calendar.parentNode.insertBefore(bar, calendar);
+    }
+  }
+
+  const summaryEl = bar.querySelector("[data-availability-summary]");
+  const sendBtnEl = bar.querySelector("[data-availability-send]");
+  const cancelBtnEl = bar.querySelector("[data-availability-cancel]");
+  return {
+    cta: bar,
+    summaryEl,
+    sendBtn: sendBtnEl,
+    cancelBtn: cancelBtnEl,
+  };
+}
+
+// Attach click/keyboard handlers that manage availability range selection.
+function setupRangeSelection(root, calendarEl, propertyLabel) {
   if (!calendarEl) return;
+  const ctaRefs = ensureAvailabilityCTA(root) || {};
   let state = rangeSelectionStates.get(calendarEl);
   if (!state) {
     state = {
       propertyLabel,
       startCell: null,
+      endCell: null,
       startDate: null,
+      endDate: null,
+      cta: ctaRefs.cta || null,
+      summaryEl: ctaRefs.summaryEl || null,
+      sendBtn: ctaRefs.sendBtn || null,
+      cancelBtn: ctaRefs.cancelBtn || null,
     };
     rangeSelectionStates.set(calendarEl, state);
 
-    const clearSelection = () => {
-      if (state.startCell) {
-        state.startCell.classList.remove("is-selecting");
+    const hideCTA = () => {
+      if (!state.cta) return;
+      state.cta.hidden = true;
+      state.cta.classList.remove("is-visible");
+      if (state.summaryEl) {
+        state.summaryEl.textContent = "";
       }
+    };
+
+    const showCTA = (startDate, endDate) => {
+      if (!state.cta || !state.summaryEl) return;
+      const label = state.propertyLabel || propertyLabel || "";
+      const startLabel = formatReadableDate(startDate);
+      const endLabel = formatReadableDate(endDate);
+      state.summaryEl.textContent = `Inquire for ${label} from ${startLabel} to ${endLabel}`;
+      state.cta.hidden = false;
+      state.cta.classList.add("is-visible");
+      if (state.sendBtn && !state.sendBtn.disabled) {
+        state.sendBtn.focus({ preventScroll: true });
+      }
+    };
+
+    const clearSelection = () => {
+      clearVisualRange(calendarEl);
       state.startCell = null;
+      state.endCell = null;
       state.startDate = null;
+      state.endDate = null;
+      hideCTA();
     };
 
     const handleActivation = (cell) => {
       if (!cell || !cell.dataset.start) return;
       const selectedDate = toLocalDate(cell.dataset.start);
       if (!selectedDate) return;
+      const selectedISO = formatISODate(selectedDate);
+
+      if (state.startDate && state.endDate) {
+        clearSelection();
+      }
 
       if (!state.startDate || selectedDate < state.startDate) {
         clearSelection();
         state.startCell = cell;
         state.startDate = selectedDate;
-        cell.classList.add("is-selecting");
+        clearVisualRange(calendarEl);
+        markVisualRange(calendarEl, selectedISO, selectedISO);
         return;
       }
 
@@ -348,18 +489,20 @@ function setupRangeSelection(calendarEl, propertyLabel) {
         clearSelection();
         state.startCell = cell;
         state.startDate = selectedDate;
-        cell.classList.add("is-selecting");
+        clearVisualRange(calendarEl);
+        markVisualRange(calendarEl, selectedISO, selectedISO);
         return;
       }
 
-      const startStr = formatISODate(state.startDate);
-      const endStr = formatISODate(selectedDate);
-      const label = state.propertyLabel || propertyLabel || "";
-      const launched = openWhatsApp(label, startStr, endStr);
-      clearSelection();
-      if (!launched) {
-        console.warn("WhatsApp contact number is not available.");
-      }
+      state.endCell = cell;
+      state.endDate = selectedDate;
+      clearVisualRange(calendarEl);
+      markVisualRange(
+        calendarEl,
+        formatISODate(state.startDate),
+        formatISODate(state.endDate)
+      );
+      showCTA(state.startDate, state.endDate);
     };
 
     calendarEl.addEventListener("click", (event) => {
@@ -367,8 +510,18 @@ function setupRangeSelection(calendarEl, propertyLabel) {
         event.target && typeof event.target.closest === "function"
           ? event.target.closest(".free-day")
           : null;
-      if (!target) return;
-      handleActivation(target);
+      if (target) {
+        handleActivation(target);
+        return;
+      }
+
+      const navTrigger =
+        event.target && typeof event.target.closest === "function"
+          ? event.target.closest("[data-availability-nav]")
+          : null;
+      if (navTrigger) {
+        clearSelection();
+      }
     });
 
     calendarEl.addEventListener("keydown", (event) => {
@@ -396,7 +549,46 @@ function setupRangeSelection(calendarEl, propertyLabel) {
       }
     });
 
+    root.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (typeof state.clearSelection === "function") {
+        event.preventDefault();
+        state.clearSelection();
+      }
+    });
+
     state.clearSelection = clearSelection;
+    state.showCTA = showCTA;
+    state.hideCTA = hideCTA;
+  } else {
+    state.cta = ctaRefs.cta || state.cta || null;
+    state.summaryEl = ctaRefs.summaryEl || state.summaryEl || null;
+    state.sendBtn = ctaRefs.sendBtn || state.sendBtn || null;
+    state.cancelBtn = ctaRefs.cancelBtn || state.cancelBtn || null;
+  }
+
+  if (state.sendBtn && !state.sendBtn.dataset.availabilityBound) {
+    state.sendBtn.dataset.availabilityBound = "true";
+    state.sendBtn.addEventListener("click", () => {
+      if (!state.startDate || !state.endDate) return;
+      const label = state.propertyLabel || propertyLabel || "";
+      const launched = openWhatsApp(label, state.startDate, state.endDate);
+      if (!launched) {
+        console.warn("WhatsApp contact number is not available.");
+      }
+      if (typeof state.clearSelection === "function") {
+        state.clearSelection();
+      }
+    });
+  }
+
+  if (state.cancelBtn && !state.cancelBtn.dataset.availabilityBound) {
+    state.cancelBtn.dataset.availabilityBound = "true";
+    state.cancelBtn.addEventListener("click", () => {
+      if (typeof state.clearSelection === "function") {
+        state.clearSelection();
+      }
+    });
   }
 
   state.propertyLabel = propertyLabel;
@@ -405,6 +597,7 @@ function setupRangeSelection(calendarEl, propertyLabel) {
   }
 }
 
+// Ensure the chosen start and end dates cover an uninterrupted free-day span.
 function isContinuousFreeRange(container, startDate, endDate) {
   if (!container || !startDate || !endDate) return false;
   const cursor = new Date(startDate);
@@ -421,6 +614,7 @@ function isContinuousFreeRange(container, startDate, endDate) {
   return true;
 }
 
+// Extract the WhatsApp number already wired into the contact link.
 function resolveWhatsAppNumber() {
   const link = document.querySelector('[data-contact="whatsapp"]');
   if (!link) return null;
@@ -434,11 +628,19 @@ function resolveWhatsAppNumber() {
   return digits || null;
 }
 
-function openWhatsApp(propertyLabel, start, end) {
+// Launch a WhatsApp inquiry pre-filled with the selected property and dates.
+function openWhatsApp(propertyLabel, startDate, endDate) {
   const number = resolveWhatsAppNumber();
   if (!number) return false;
   const labelText = propertyLabel || "your property";
-  const message = `Hello! I'm interested in ${labelText} from ${start} to ${end}.`;
+  const startLabel = formatReadableDate(startDate);
+  const endLabel = formatReadableDate(endDate);
+  const message = [
+    "Hello!",
+    `I'm interested in ${labelText} for the period`,
+    `- ${startLabel} to`,
+    `- ${endLabel}`,
+  ].join("\n");
   const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
   const win = window.open(url, "_blank", "noopener");
   if (win && typeof win.opener !== "undefined") {
@@ -447,11 +649,37 @@ function openWhatsApp(propertyLabel, start, end) {
   return true;
 }
 
+// Convert a Date to a YYYY-MM-DD string used for data attributes.
 function formatISODate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+// Render a Date in a human-readable "25 October 2025" format.
+function formatReadableDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const day = date.getDate();
+  const month = monthNames[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 // Initialize widgets once the DOM is ready.

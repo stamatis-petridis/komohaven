@@ -151,6 +151,18 @@
         <p class="muted" data-availability-note>
           Loading availability…
         </p>
+        <!-- Inline WhatsApp confirmation bar; populated via availability.js once a free range is chosen -->
+        <div class="availability-cta" data-availability-cta hidden>
+          <p class="availability-cta-summary" data-availability-summary></p>
+          <div class="availability-cta-actions">
+            <button type="button" class="btn" data-availability-send>
+              Send via WhatsApp
+            </button>
+            <button type="button" class="btn outline" data-availability-cancel>
+              Cancel
+            </button>
+          </div>
+        </div>
         <div
           class="availability-calendar"
           data-availability-calendar
@@ -160,7 +172,10 @@
 
       <section id="location" class="location">
         <h2>Location</h2>
-        <div id="map" class="map-placeholder">Map loading…</div>
+        <!-- Leaflet map target; data-map hook allows script.js to hydrate the interactive map -->
+        <div id="map" class="map-placeholder" data-map="leaflet">
+          Map loading…
+        </div>
       </section>
 
       <section id="contact" class="contact">
