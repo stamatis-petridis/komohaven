@@ -70,6 +70,7 @@ This document orients an autonomous agent that maintains or extends the Komotini
 - Dark theme defined through CSS variables. For new components, derive colors from existing variables to keep brand consistency.
 - Layout uses CSS grid extensively; verify responsive behavior around tablet/phone widths after structural edits.
 - Avoid inline styles except for intentional overrides already present (e.g., hero image sizing, language pill margin).
+- `styles.css` is organized with section banners and `/* #region */` markers—collapse the regions in your editor to jump straight to layout, availability, or responsive tweaks and keep the existing structure intact when updating styles.
 
 ## 7. Deployment & Version Control
 
@@ -123,5 +124,6 @@ This document orients an autonomous agent that maintains or extends the Komotini
   Pushing to `main` triggers the Cloudflare Pages deploy (repository `komohaven`).
 - **Shortcut:** Execute `./push_availability.sh` from the repo root to perform the full sequence (install, rebuild, commit, push) automatically (run `chmod +x push_availability.sh` once if needed).
 - **Front-end:** Property detail pages fetch `/availability/availability.json` and render it via `/availability/availability.js`.
+- **Navigation:** `availability/availability.js` includes section headers, `//#region` markers, and JSDoc summaries; fold the regions in VS Code to find fetch, DOM, and CTA logic quickly and keep those comments in sync when extending the widget.
 - **Usage notes:** Environment keys must follow `<PROPERTY>_ICAL_URL_<SOURCE>` so the script can auto-discover feeds. Keep the toolkit lightweight (stdlib Python + vanilla JS) and update this guide when workflows change to stay in sync with the main site.
 Use this guide as the operational reference when planning changes, triaging tasks, or validating updates.

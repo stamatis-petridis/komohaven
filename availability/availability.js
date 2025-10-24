@@ -1,8 +1,57 @@
+// Availability calendar widget powering property detail pages.
+// Table of Contents:
+// - Constants & Cache
+// - Fetch & Parse
+// - DOM Discovery & Boot
+// - Rendering
+// - Helpers (dates & labels)
+// - Free-day Decoration & Visual Range
+// - CTA State
+// - Selection & WhatsApp
+// - Startup
+
+// ───────────────────────────── Constants & Cache
+//#region Constants & Cache
+
 const AVAILABILITY_ENDPOINT = new URL("./availability.json", import.meta.url).toString();
 // Cache the fetch promise so multiple widgets on the page reuse the same request.
 let availabilityCachePromise;
 const CTA_DEFAULT_MESSAGE =
   "Select start and end dates to draft a WhatsApp message. Booked dates are marked below.";
+
+//#endregion
+
+// ───────────────────────────── Fetch & Parse
+//#region Fetch & Parse
+
+// Fetch and cache the JSON that backs the widget.
+async function loadAvailabilityJSON() {
+  if (!availabilityCachePromise) {
+    availabilityCachePromise = fetch(AVAILABILITY_ENDPOINT, {
+      headers: { Accept: "application/json" },
+    })
+      // Gracefully fallback to empty data so the UI still renders.
+      .then((res) => (res.ok ? res.json() : { updated: null, properties: {} }))
+      .catch(() => ({ updated: null, properties: {} }));
+  }
+  return availabilityCachePromise;
+}
+
+// Parse a string into a Date normalized to local midnight.
+function toLocalDate(value) {
+  // Accept YYYY-MM-DD or ISO timestamps; normalize to midnight.
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
 
 // Fetch the availability payload and expose the subset for a specific slug.
 export async function fetchAvailability(slug) {
@@ -36,34 +85,10 @@ export function normalizeRanges(booked) {
   return ranges;
 }
 
-// Fetch and cache the JSON that backs the widget.
-async function loadAvailabilityJSON() {
-  if (!availabilityCachePromise) {
-    availabilityCachePromise = fetch(AVAILABILITY_ENDPOINT, {
-      headers: { Accept: "application/json" },
-    })
-      // Gracefully fallback to empty data so the UI still renders.
-      .then((res) => (res.ok ? res.json() : { updated: null, properties: {} }))
-      .catch(() => ({ updated: null, properties: {} }));
-  }
-  return availabilityCachePromise;
-}
+//#endregion
 
-// Parse a string into a Date normalized to local midnight.
-function toLocalDate(value) {
-  // Accept YYYY-MM-DD or ISO timestamps; normalize to midnight.
-  if (!value) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [y, m, d] = value.split("-").map(Number);
-    const date = new Date(y, m - 1, d);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  parsed.setHours(0, 0, 0, 0);
-  return parsed;
-}
+// ───────────────────────────── DOM Discovery & Boot
+//#region DOM Discovery & Boot
 
 // Discover all DOM blocks that declare a property slug and hydrate them.
 function initAvailabilityBlocks() {
@@ -76,7 +101,11 @@ function initAvailabilityBlocks() {
   });
 }
 
-// Fetch, render, and annotate one availability block.
+/**
+ * Hydrates a single availability block with fetched calendar data.
+ * @param {Element} root Widget root element.
+ * @param {string} slug Lowercase property slug used for fetching.
+ */
 async function enhanceBlock(root, slug) {
   const noteEls = root.querySelectorAll("[data-availability-note]");
   const calendarEl = root.querySelector("[data-availability-calendar]");
@@ -132,7 +161,17 @@ function updateNotes(noteEls) {
   });
 }
 
-// Render a multi-month calendar highlighting booked ranges.
+//#endregion
+
+// ───────────────────────────── Rendering
+//#region Rendering
+
+/**
+ * Render a multi-month availability calendar into the container.
+ * @param {HTMLElement} container Calendar root element.
+ * @param {Array} ranges Sorted half-open booking ranges.
+ * @param {Object} [options] Optional overrides such as months to render.
+ */
 function renderCalendar(container, ranges, { months = 3 } = {}) {
   container.innerHTML = "";
   const today = new Date();
@@ -238,37 +277,6 @@ function applyDayState(td, date, today, ranges) {
   }
 }
 
-// Determine whether a date falls inside any booked half-open range.
-function isBooked(date, ranges) {
-  return ranges.some(({ start, end }) => date >= start && date < end);
-}
-
-// Compare two dates ignoring the time portion.
-function isSameDay(a, b) {
-  // Strict comparison by calendar day (ignore time component).
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-// Format a date label for accessibility/tooltip text.
-function dateLabel(date) {
-  return date.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatUpdatedLabel(updated) {
-  if (!updated) return "recently";
-  const date = new Date(updated);
-  if (Number.isNaN(date.getTime())) return "recently";
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 // Provide weekday abbreviations (Monday-first).
 function getWeekdays() {
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -301,6 +309,79 @@ function createLegend() {
   return legend;
 }
 
+//#endregion
+
+// ───────────────────────────── Helpers (dates & labels)
+//#region Helpers (dates & labels)
+
+// Determine whether a date falls inside any booked half-open range.
+function isBooked(date, ranges) {
+  return ranges.some(({ start, end }) => date >= start && date < end);
+}
+
+// Compare two dates ignoring the time portion.
+function isSameDay(a, b) {
+  // Strict comparison by calendar day (ignore time component).
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+// Format a date label for accessibility/tooltip text.
+function dateLabel(date) {
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatUpdatedLabel(updated) {
+  if (!updated) return "recently";
+  const date = new Date(updated);
+  if (Number.isNaN(date.getTime())) return "recently";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+// Convert a Date to a YYYY-MM-DD string used for data attributes.
+function formatISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Render a Date in a human-readable "25 October 2025" format.
+function formatReadableDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const day = date.getDate();
+  const month = monthNames[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
 // Derive a human-friendly property label from DOM attributes or fallback slug.
 function getPropertyLabel(root, slug) {
   if (!root) return slug || "";
@@ -313,6 +394,11 @@ function getPropertyLabel(root, slug) {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }
+
+//#endregion
+
+// ───────────────────────────── Free-day Decoration & Visual Range
+//#region Free-day Decoration & Visual Range
 
 // Mark a day cell as selectable and annotate it with metadata for range selection.
 function decorateFreeDay(td, date) {
@@ -390,6 +476,11 @@ function maybeScrollCTAIntoView(element) {
   }
 }
 
+//#endregion
+
+// ───────────────────────────── CTA State
+//#region CTA State
+
 // Reset CTA copy and controls to the neutral state.
 function setCTADefaultState(state) {
   if (!state) return;
@@ -429,8 +520,6 @@ function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   }
   maybeScrollCTAIntoView(state.cta);
 }
-
-const rangeSelectionStates = new WeakMap();
 
 // Make sure the inline CTA bar exists (or create it) and return its controls.
 function ensureAvailabilityCTA(root) {
@@ -498,8 +587,26 @@ function ensureAvailabilityCTA(root) {
   };
 }
 
-// Attach click/keyboard handlers that manage availability range selection.
-function setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel = "recently") {
+//#endregion
+
+// ───────────────────────────── Selection & WhatsApp
+//#region Selection & WhatsApp
+
+const rangeSelectionStates = new WeakMap();
+
+/**
+ * Wire up range selection interactions and CTA hooks for a calendar.
+ * @param {Element} root Availability widget container.
+ * @param {HTMLElement} calendarEl Calendar table wrapper.
+ * @param {string} propertyLabel Friendly property label for messaging.
+ * @param {string} updatedLabel Human-readable updated timestamp.
+ */
+function setupRangeSelection(
+  root,
+  calendarEl,
+  propertyLabel,
+  updatedLabel = "recently"
+) {
   if (!calendarEl) return;
   const ctaRefs = ensureAvailabilityCTA(root) || {};
   let state = rangeSelectionStates.get(calendarEl);
@@ -677,7 +784,13 @@ function setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel = "re
   }
 }
 
-// Ensure the chosen start and end dates cover an uninterrupted free-day span.
+/**
+ * Ensure the chosen start and end dates cover an uninterrupted free-day span.
+ * @param {HTMLElement} container Calendar wrapper element.
+ * @param {Date} startDate Selected start date.
+ * @param {Date} endDate Selected end date.
+ * @returns {boolean} True when every day in the span is free.
+ */
 function isContinuousFreeRange(container, startDate, endDate) {
   if (!container || !startDate || !endDate) return false;
   const cursor = new Date(startDate);
@@ -708,7 +821,13 @@ function resolveWhatsAppNumber() {
   return digits || null;
 }
 
-// Launch a WhatsApp inquiry pre-filled with the selected property and dates.
+/**
+ * Launch a WhatsApp inquiry prefilled with the selected property and dates.
+ * @param {string} propertyLabel Friendly property label for the message.
+ * @param {Date} startDate Selected start date.
+ * @param {Date} endDate Selected end date.
+ * @returns {boolean} True when a WhatsApp window was opened.
+ */
 function openWhatsApp(propertyLabel, startDate, endDate) {
   const number = resolveWhatsAppNumber();
   if (!number) return false;
@@ -729,38 +848,10 @@ function openWhatsApp(propertyLabel, startDate, endDate) {
   return true;
 }
 
-// Convert a Date to a YYYY-MM-DD string used for data attributes.
-function formatISODate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+//#endregion
 
-// Render a Date in a human-readable "25 October 2025" format.
-function formatReadableDate(date) {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-    return "";
-  }
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const day = date.getDate();
-  const month = monthNames[date.getMonth()];
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
-}
+// ───────────────────────────── Startup
+//#region Startup
 
 // Initialize widgets once the DOM is ready.
 if (document.readyState === "loading") {
@@ -771,3 +862,5 @@ if (document.readyState === "loading") {
 } else {
   initAvailabilityBlocks();
 }
+
+//#endregion

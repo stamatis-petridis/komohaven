@@ -1,3 +1,31 @@
+/* ───────────────────────────── Komohaven Styles ───────────────────────────── */
+/* #region File Overview */
+/* Global stylesheet for the Blue Dream & Studio 9 marketing pages.
+ * Table of Contents:
+ * 1) Root & Resets
+ * 2) Navigation
+ * 3) Buttons
+ * 4) Hero
+ * 5) Layout & Listing Blocks
+ * 6) Location / Map
+ * 7) Contact Form Layout
+ * 8) Availability — Shell
+ * 9) Availability — Table & States
+ * 10) Availability — Range Selection
+ * 11) Availability — CTA Bar
+ * 12) Availability — Legend
+ * 13) Lightbox
+ * 14) Contact Form Controls
+ * 15) Footer
+ * 16) Responsive
+ */
+/* #endregion */
+
+/* ───────────────────────────── Root & Resets ───────────────────────────── */
+/* #region Root & Resets */
+
+/* Core design tokens shared across components and availability widgets. */
+
 :root {
   --bg: #0b0b0c;
   --fg: #f5f7fa;
@@ -38,6 +66,11 @@ a {
   font-size: 0.9rem;
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Navigation ───────────────────────────── */
+/* #region Navigation */
+
 .nav {
   position: sticky;
   top: 0;
@@ -67,6 +100,12 @@ a {
   margin-left: 18px;
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Buttons ───────────────────────────── */
+/* #region Buttons */
+
+/* Shared CTA button styling reused across hero, listings, contact, and availability widgets. */
 .btn {
   display: inline-block;
   padding: 10px 16px;
@@ -84,6 +123,11 @@ a {
   border: 1px solid var(--brand);
   color: var(--fg);
 }
+
+/* #endregion */
+
+/* ───────────────────────────── Hero ───────────────────────────── */
+/* #region Hero */
 
 .hero {
   position: relative;
@@ -116,6 +160,11 @@ a {
   gap: 12px;
   margin-top: 8px;
 }
+
+/* #endregion */
+
+/* ───────────────────────────── Layout & Listing Blocks ───────────────────────────── */
+/* #region Layout & Listing Blocks */
 
 main {
   display: flex;
@@ -154,6 +203,7 @@ main {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Cursor hints at lightbox interaction handled by script.js. */
   cursor: zoom-in;
 }
 .details {
@@ -176,6 +226,11 @@ main {
   flex-wrap: wrap;
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Location / Map ───────────────────────────── */
+/* #region Location / Map */
+
 .location .map-placeholder {
   height: 260px;
   border-radius: 16px;
@@ -184,6 +239,11 @@ main {
   place-items: center;
   color: var(--muted);
 }
+
+/* #endregion */
+
+/* ───────────────────────────── Contact Form Layout ───────────────────────────── */
+/* #region Contact Form Layout */
 
 .contact form {
   display: grid;
@@ -199,6 +259,11 @@ main {
   flex-direction: column;
   gap: 6px;
 }
+
+/* #endregion */
+
+/* ───────────────────────────── Availability — Shell ───────────────────────────── */
+/* #region Availability — Shell */
 
 .availability {
   background: var(--card);
@@ -222,6 +287,12 @@ main {
   margin: 0 0 8px;
   font-size: 1rem;
 }
+
+/* #endregion */
+/* ───────────────────────────── Availability — Table & States ───────────────────────────── */
+/* #region Availability — Table & States */
+
+/* Table structure paired with date-state classes applied by availability.js. */
 .availability-table {
   width: 100%;
   border-collapse: collapse;
@@ -249,6 +320,7 @@ main {
   opacity: 0.4;
 }
 .availability-table td.today {
+  /* Highlight matches legend token; availability.js applies today class. */
   outline: 1px solid var(--brand);
   font-weight: 600;
 }
@@ -258,6 +330,12 @@ main {
   color: #ff4d4d;
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Availability — Range Selection ───────────────────────────── */
+/* #region Availability — Range Selection */
+
+/* Range classes toggled by availability.js during keyboard/mouse selection flow. */
 .availability-table td.range-mid {
   background: rgba(74, 209, 255, 0.18);
   color: var(--fg);
@@ -291,11 +369,18 @@ main {
 
 .free-day {
   cursor: pointer;
+  /* availability.js promotes these cells to interactive buttons. */
 }
 
 .free-day.is-selecting {
   outline: 2px solid var(--brand);
+  /* Outline reinforces pending range before final selection is committed. */
 }
+
+/* #endregion */
+
+/* ───────────────────────────── Availability — CTA Bar ───────────────────────────── */
+/* #region Availability — CTA Bar */
 
 .availability-cta {
   margin: 16px 0 8px;
@@ -327,6 +412,7 @@ main {
   padding: 0.65em 1.1em;
   font-size: 0.95rem;
   line-height: 1.2;
+  /* Offset keeps focus halo visible against the dark CTA background. */
   outline-offset: 2px;
 }
 
@@ -342,6 +428,8 @@ main {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Responsive refinements stay colocated with CTA styles for quick scanning. */
+/* #region CTA Breakpoint ≤600px */
 @media (max-width: 600px) {
   .availability-cta {
     padding: 12px 14px;
@@ -353,7 +441,9 @@ main {
     align-items: stretch;
   }
 }
+/* #endregion */
 
+/* #region CTA Breakpoint ≤480px */
 @media (max-width: 480px) {
   .availability {
     padding: 20px 16px;
@@ -413,7 +503,9 @@ main {
     width: 100%;
   }
 }
+/* #endregion */
 
+/* #region CTA Breakpoint ≤420px */
 @media (max-width: 420px) {
   .availability-cta {
     padding: 12px 14px;
@@ -428,7 +520,9 @@ main {
     gap: 10px;
   }
 }
+/* #endregion */
 
+/* #region CTA Breakpoint ≤480px (Summary Clamp) */
 @media (max-width: 480px) {
   .availability-cta-summary {
     font-size: 0.86rem;
@@ -444,7 +538,9 @@ main {
     font-size: clamp(0.88rem, 3.6vw, 0.95rem);
   }
 }
+/* #endregion */
 
+/* #region CTA Breakpoint ≥640px */
 @media (min-width: 640px) {
   .availability-cta-actions {
     flex-direction: row;
@@ -463,8 +559,15 @@ main {
     word-break: break-word;
   }
 }
+/* #endregion */
+
+/* #endregion */
+
+/* ───────────────────────────── Availability — Legend ───────────────────────────── */
+/* #region Availability — Legend */
 
 .availability-legend {
+  /* Mirrors the booking states so guests can read colors quickly. */
   display: flex;
   gap: 16px;
   align-items: center;
@@ -494,6 +597,12 @@ main {
   border-color: var(--brand);
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Lightbox ───────────────────────────── */
+/* #region Lightbox */
+
+/* Image overlay toggled by script.js when gallery items are tapped. */
 .lightbox {
   position: fixed;
   inset: 0;
@@ -546,6 +655,13 @@ main {
 body.lightbox-open {
   overflow: hidden;
 }
+
+/* #endregion */
+
+/* ───────────────────────────── Contact Form Controls ───────────────────────────── */
+/* #region Contact Form Controls */
+
+/* Shared input theming for the contact form and CTA prefill fields. */
 .form-row input,
 .form-row select,
 .form-row textarea {
@@ -569,6 +685,11 @@ body.lightbox-open {
   flex-wrap: wrap;
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Footer ───────────────────────────── */
+/* #region Footer */
+
 .footer {
   border-top: 1px solid var(--line);
   padding: 22px 0;
@@ -587,6 +708,12 @@ body.lightbox-open {
   color: var(--fg);
 }
 
+/* #endregion */
+
+/* ───────────────────────────── Responsive ───────────────────────────── */
+/* #region Responsive */
+
+/* #region Breakpoint ≤960px (single-column listings) */
 @media (max-width: 960px) {
   .grid {
     grid-template-columns: 1fr;
@@ -595,6 +722,9 @@ body.lightbox-open {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+/* #endregion */
+
+/* #region Breakpoint ≤640px (form + gallery stacking) */
 @media (max-width: 640px) {
   .contact form {
     grid-template-columns: 1fr;
@@ -603,3 +733,6 @@ body.lightbox-open {
     grid-template-columns: 1fr 1fr;
   }
 }
+/* #endregion */
+
+/* #endregion */
