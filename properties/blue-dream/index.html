@@ -49,7 +49,7 @@
     <section id="top" class="hero">
       <picture>
         <img
-          src="../../hero.jpg"
+          src="assets/1.jpeg"
           alt="Aegean vibe in the center of Komotini"
           loading="eager"
           style="display: block; width: 100%; height: 62vh; object-fit: cover"
@@ -152,14 +152,30 @@
           Loading availability…
         </p>
         <!-- Inline WhatsApp confirmation bar; populated via availability.js once a free range is chosen -->
-        <div class="availability-cta" data-availability-cta hidden>
-          <p class="availability-cta-summary" data-availability-summary></p>
+        <div class="availability-cta" data-availability-cta>
+          <p
+            class="availability-cta-summary"
+            data-availability-summary
+            aria-live="polite"
+          >
+            Select start and end dates to draft a WhatsApp message. Booked dates are marked below. Updated recently.
+          </p>
           <div class="availability-cta-actions">
-            <button type="button" class="btn" data-availability-send>
+            <button
+              type="button"
+              class="btn"
+              data-availability-send
+              disabled
+            >
               Send via WhatsApp
             </button>
-            <button type="button" class="btn outline" data-availability-cancel>
-              Cancel
+            <button
+              type="button"
+              class="btn outline"
+              data-availability-cancel
+              disabled
+            >
+              Clear
             </button>
           </div>
         </div>

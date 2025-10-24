@@ -1,6 +1,8 @@
 const AVAILABILITY_ENDPOINT = new URL("./availability.json", import.meta.url).toString();
 // Cache the fetch promise so multiple widgets on the page reuse the same request.
 let availabilityCachePromise;
+const CTA_DEFAULT_MESSAGE =
+  "Select start and end dates to draft a WhatsApp message. Booked dates are marked below.";
 
 // Fetch the availability payload and expose the subset for a specific slug.
 export async function fetchAvailability(slug) {
@@ -93,38 +95,40 @@ async function enhanceBlock(root, slug) {
     const { updated, booked } = await fetchAvailability(slug);
     const ranges = normalizeRanges(booked);
     const propertyLabel = getPropertyLabel(root, slug);
+    const updatedLabel = formatUpdatedLabel(updated);
     renderCalendar(calendarEl, ranges);
     ensureLegend(root);
-    setupRangeSelection(root, calendarEl, propertyLabel);
-    updateNotes(noteEls, ranges, updated);
+    setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel);
+    updateNotes(noteEls);
   } catch (error) {
     console.error("Availability error", error);
     // Fall back to a helpful message if the fetch fails.
     noteEls.forEach((el) => {
+      el.hidden = false;
       el.textContent =
         "Availability could not be loaded right now. Please mention your dates in the message.";
     });
     calendarEl.innerHTML = "";
+    const cta = root.querySelector("[data-availability-cta]");
+    if (cta) {
+      const summary = cta.querySelector("[data-availability-summary]");
+      const sendBtn = cta.querySelector("[data-availability-send]");
+      const cancelBtn = cta.querySelector("[data-availability-cancel]");
+      if (summary) {
+        summary.textContent =
+          "Availability could not be loaded right now. Please mention your dates in the message.";
+      }
+      if (sendBtn) sendBtn.disabled = true;
+      if (cancelBtn) cancelBtn.disabled = true;
+    }
   }
 }
 
 // Update helper text below the calendar with last-updated info.
-function updateNotes(noteEls, ranges, updated) {
-  // Compose a friendly status message including last-updated date.
-  const updatedLabel = updated
-    ? new Date(updated).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : null;
-  const hasBookings = ranges.length > 0;
-  const message = hasBookings
-    ? `Select your stay dates to message us on WhatsApp. Booked dates are highlighted below. Updated ${updatedLabel || "recently"}.`
-    : `Select your stay dates to message us on WhatsApp. No bookings on the calendar yet. Updated ${updatedLabel || "recently"}.`;
-
+function updateNotes(noteEls) {
   noteEls.forEach((el) => {
-    el.textContent = message;
+    el.textContent = "";
+    el.hidden = true;
   });
 }
 
@@ -254,6 +258,17 @@ function dateLabel(date) {
   });
 }
 
+function formatUpdatedLabel(updated) {
+  if (!updated) return "recently";
+  const date = new Date(updated);
+  if (Number.isNaN(date.getTime())) return "recently";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 // Provide weekday abbreviations (Monday-first).
 function getWeekdays() {
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -357,6 +372,64 @@ function markVisualRange(container, startISO, endISO) {
   }
 }
 
+// Smoothly scroll the CTA into view if it is mostly off-screen.
+function maybeScrollCTAIntoView(element) {
+  if (!element) return;
+  const rect = element.getBoundingClientRect();
+  const viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight || 0;
+  if (!rect.height || viewportHeight <= 0) return;
+  const prefersReducedMotion =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const visibleTop = Math.max(rect.top, 0);
+  const visibleBottom = Math.min(rect.bottom, viewportHeight);
+  const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+  if (!prefersReducedMotion && visibleHeight / rect.height < 0.5) {
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+// Reset CTA copy and controls to the neutral state.
+function setCTADefaultState(state) {
+  if (!state) return;
+  if (state.cta) {
+    state.cta.hidden = false;
+  }
+  if (state.summaryEl) {
+    const updatedText = state.updatedLabel || "recently";
+    state.summaryEl.textContent = `${CTA_DEFAULT_MESSAGE} Updated ${updatedText}.`;
+  }
+  if (state.sendBtn) {
+    state.sendBtn.disabled = true;
+  }
+  if (state.cancelBtn) {
+    state.cancelBtn.disabled = true;
+  }
+}
+
+// Populate the CTA with the active range details.
+function setCTASelectedState(state, propertyLabel, startDate, endDate) {
+  if (!state || !startDate || !endDate) return;
+  if (state.cta) {
+    state.cta.hidden = false;
+  }
+  const labelText = propertyLabel || "your property";
+  const startLabel = formatReadableDate(startDate);
+  const endLabel = formatReadableDate(endDate);
+  if (state.summaryEl) {
+    const updatedText = state.updatedLabel || "recently";
+    state.summaryEl.textContent = `Inquire for ${labelText} from ${startLabel} to ${endLabel}. Updated ${updatedText}.`;
+  }
+  if (state.sendBtn) {
+    state.sendBtn.disabled = false;
+  }
+  if (state.cancelBtn) {
+    state.cancelBtn.disabled = false;
+  }
+  maybeScrollCTAIntoView(state.cta);
+}
+
 const rangeSelectionStates = new WeakMap();
 
 // Make sure the inline CTA bar exists (or create it) and return its controls.
@@ -368,11 +441,12 @@ function ensureAvailabilityCTA(root) {
     bar = document.createElement("div");
     bar.className = "availability-cta";
     bar.setAttribute("data-availability-cta", "");
-    bar.hidden = true;
 
     const summary = document.createElement("p");
     summary.className = "availability-cta-summary";
     summary.setAttribute("data-availability-summary", "");
+    summary.setAttribute("aria-live", "polite");
+    summary.textContent = `${CTA_DEFAULT_MESSAGE} Updated recently.`;
     bar.appendChild(summary);
 
     const actions = document.createElement("div");
@@ -383,12 +457,14 @@ function ensureAvailabilityCTA(root) {
     sendBtn.className = "btn";
     sendBtn.setAttribute("data-availability-send", "");
     sendBtn.textContent = "Send via WhatsApp";
+    sendBtn.disabled = true;
 
     const cancelBtn = document.createElement("button");
     cancelBtn.type = "button";
     cancelBtn.className = "btn outline";
     cancelBtn.setAttribute("data-availability-cancel", "");
-    cancelBtn.textContent = "Cancel";
+    cancelBtn.textContent = "Clear";
+    cancelBtn.disabled = true;
 
     actions.appendChild(sendBtn);
     actions.appendChild(cancelBtn);
@@ -402,6 +478,18 @@ function ensureAvailabilityCTA(root) {
   const summaryEl = bar.querySelector("[data-availability-summary]");
   const sendBtnEl = bar.querySelector("[data-availability-send]");
   const cancelBtnEl = bar.querySelector("[data-availability-cancel]");
+  if (summaryEl) {
+    summaryEl.setAttribute("aria-live", "polite");
+    if (!summaryEl.textContent.trim()) {
+      summaryEl.textContent = `${CTA_DEFAULT_MESSAGE} Updated recently.`;
+    }
+  }
+  if (sendBtnEl) {
+    sendBtnEl.disabled = true;
+  }
+  if (cancelBtnEl) {
+    cancelBtnEl.disabled = true;
+  }
   return {
     cta: bar,
     summaryEl,
@@ -411,7 +499,7 @@ function ensureAvailabilityCTA(root) {
 }
 
 // Attach click/keyboard handlers that manage availability range selection.
-function setupRangeSelection(root, calendarEl, propertyLabel) {
+function setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel = "recently") {
   if (!calendarEl) return;
   const ctaRefs = ensureAvailabilityCTA(root) || {};
   let state = rangeSelectionStates.get(calendarEl);
@@ -426,29 +514,21 @@ function setupRangeSelection(root, calendarEl, propertyLabel) {
       summaryEl: ctaRefs.summaryEl || null,
       sendBtn: ctaRefs.sendBtn || null,
       cancelBtn: ctaRefs.cancelBtn || null,
+      updatedLabel: updatedLabel || "recently",
     };
     rangeSelectionStates.set(calendarEl, state);
 
     const hideCTA = () => {
-      if (!state.cta) return;
-      state.cta.hidden = true;
-      state.cta.classList.remove("is-visible");
-      if (state.summaryEl) {
-        state.summaryEl.textContent = "";
-      }
+      setCTADefaultState(state);
     };
 
     const showCTA = (startDate, endDate) => {
-      if (!state.cta || !state.summaryEl) return;
-      const label = state.propertyLabel || propertyLabel || "";
-      const startLabel = formatReadableDate(startDate);
-      const endLabel = formatReadableDate(endDate);
-      state.summaryEl.textContent = `Inquire for ${label} from ${startLabel} to ${endLabel}`;
-      state.cta.hidden = false;
-      state.cta.classList.add("is-visible");
-      if (state.sendBtn && !state.sendBtn.disabled) {
-        state.sendBtn.focus({ preventScroll: true });
-      }
+      setCTASelectedState(
+        state,
+        state.propertyLabel || propertyLabel || "",
+        startDate,
+        endDate
+      );
     };
 
     const clearSelection = () => {
@@ -533,12 +613,6 @@ function setupRangeSelection(root, calendarEl, propertyLabel) {
       if (event.key === "Escape") {
         event.preventDefault();
         clearSelection();
-        if (target) {
-          target.classList.remove("is-selecting");
-          if (typeof target.blur === "function") {
-            target.blur();
-          }
-        }
         return;
       }
 
@@ -565,11 +639,16 @@ function setupRangeSelection(root, calendarEl, propertyLabel) {
     state.summaryEl = ctaRefs.summaryEl || state.summaryEl || null;
     state.sendBtn = ctaRefs.sendBtn || state.sendBtn || null;
     state.cancelBtn = ctaRefs.cancelBtn || state.cancelBtn || null;
+    state.updatedLabel = updatedLabel || state.updatedLabel || "recently";
+    setCTADefaultState(state);
   }
+
+  state.updatedLabel = updatedLabel || state.updatedLabel || "recently";
 
   if (state.sendBtn && !state.sendBtn.dataset.availabilityBound) {
     state.sendBtn.dataset.availabilityBound = "true";
     state.sendBtn.addEventListener("click", () => {
+      if (state.sendBtn && state.sendBtn.disabled) return;
       if (!state.startDate || !state.endDate) return;
       const label = state.propertyLabel || propertyLabel || "";
       const launched = openWhatsApp(label, state.startDate, state.endDate);
@@ -585,6 +664,7 @@ function setupRangeSelection(root, calendarEl, propertyLabel) {
   if (state.cancelBtn && !state.cancelBtn.dataset.availabilityBound) {
     state.cancelBtn.dataset.availabilityBound = "true";
     state.cancelBtn.addEventListener("click", () => {
+      if (state.cancelBtn && state.cancelBtn.disabled) return;
       if (typeof state.clearSelection === "function") {
         state.clearSelection();
       }
