@@ -528,6 +528,7 @@ main {
     font-size: 0.86rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;              /* Added standard property */
     -webkit-box-orient: vertical;
     overflow: hidden;
     word-break: break-word;
@@ -554,6 +555,7 @@ main {
   .availability-cta-summary {
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     word-break: break-word;

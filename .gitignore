@@ -1,5 +1,5 @@
 .DS_Store
-
+.vscode
 # Availability toolkit secrets
 availability/.env
 availability/.env.*

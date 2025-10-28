@@ -2,8 +2,8 @@
 
 A multilingual static website for two rental properties in Komotini, Greece:
 
-- **Blue Dream** (near center, 1BR, 2 guests)
-- **Studio 9** (central studio, 1–2 guests)
+- **Blue Dream** (center, 1BR, 2 guests)
+- **Studio 9** (studio, 2 guests)
 
 The site is built with **HTML, CSS, and JS**, and hosted on **Cloudflare Pages**.
 It includes **direct booking options**, **map integrations**, and **multi-language support** (EN, EL, TR, BG).
@@ -42,7 +42,7 @@ This project was built step by step as a **learning journey**:
 
 ## 🚀 Deployment
 
-- Hosted on **GitHub Pages** (free static hosting).
+- Hosted on **Cloudflare Pages** (free static hosting).
 - To update:
   ```bash
   git add -A
@@ -56,15 +56,12 @@ This project was built step by step as a **learning journey**:
 ## 📌 Next Steps
 
 - Add SEO meta tags per language with local keywords.
-- Optimize images for faster load.
 - Add FAQ section for common guest queries.
-- Consider lightbox for gallery images.
 
 ---
 
 ## 🗂 Asset Organization
 
-- Shared site assets (e.g. hero, favicon) live under `assets/`.
 - Property-specific media sits alongside each page in `properties/<slug>/assets/`, so everything needed for Blue Dream or Studio 9 is self-contained.
 
 ---

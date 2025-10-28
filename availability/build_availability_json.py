@@ -153,6 +153,7 @@ def merge_ranges(ranges: Iterable[Tuple[dt.date, dt.date]]) -> List[Tuple[dt.dat
 # Build the final availability mapping by fetching each feed and merging ranges.
 def build_availability(feeds: Dict[str, List[str]]) -> Dict[str, Dict[str, List[Dict[str, str]]]]:
     availability: Dict[str, Dict[str, List[Dict[str, str]]]] = {}
+    cutoff_date = dt.datetime.now(ATHENS_TZ).date() + dt.timedelta(days=150)
 
     for slug, urls in feeds.items():
         all_ranges: List[Tuple[dt.date, dt.date]] = []
@@ -160,7 +161,13 @@ def build_availability(feeds: Dict[str, List[str]]) -> Dict[str, Dict[str, List[
             try:
                 ics_text = fetch_ics(url)
                 ranges = parse_ics_events(ics_text)
-                all_ranges.extend(ranges)
+                for start, end in ranges:
+                    if start >= cutoff_date:
+                        # Drop far-future bookings so the JSON stays focused on the next ~5 months.
+                        continue
+                    bounded_end = min(end, cutoff_date)
+                    if bounded_end > start:
+                        all_ranges.append((start, bounded_end))
             except Exception as exc:  # pragma: no cover - network issues
                 print(f"[WARN] Failed to ingest {slug} feed {url}: {exc}", file=sys.stderr)
 
