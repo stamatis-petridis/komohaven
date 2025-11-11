@@ -1,0 +1,82 @@
+name: Update availability
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes; adjust as needed
+  workflow_dispatch: {}       # manual trigger
+
+permissions:
+  contents: write   # allows commit back to repo
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r availability/requirements.txt
+
+      - name: Write .env
+        run: |
+          cat > availability/.env <<'ENV'
+          BLUE_DREAM_ICAL_URL_AIRBNB=${{ secrets.BLUE_DREAM_ICAL_URL_AIRBNB }}
+          BLUE_DREAM_ICAL_URL_BOOKING=${{ secrets.BLUE_DREAM_ICAL_URL_BOOKING }}
+          STUDIO9_ICAL_URL_AIRBNB=${{ secrets.STUDIO9_ICAL_URL_AIRBNB }}
+          STUDIO9_ICAL_URL_BOOKING=${{ secrets.STUDIO9_ICAL_URL_BOOKING }}
+          ENV
+
+      - name: Build JSON
+        run: python availability/build_availability_json.py
+
+      # ────────────────────────────────────────────────
+      # Compare logical changes (ignore `.updated`)
+      # ────────────────────────────────────────────────
+      - name: Determine if availability logically changed (ignore .updated)
+        id: logicaldiff
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y jq
+          NEW=/tmp/new.json
+          OLD=/tmp/old.json
+
+          # normalize new file (strip `.updated`)
+          jq 'del(.updated)' availability/availability.json > "$NEW"
+
+          # fetch last committed version and normalize
+          git fetch origin main --depth=1
+          if git show origin/main:availability/availability.json >/dev/null 2>&1; then
+            git show origin/main:availability/availability.json | jq 'del(.updated)' > "$OLD"
+          else
+            echo '{}' > "$OLD"
+          fi
+
+          # detect diff
+          if diff -q "$OLD" "$NEW" >/dev/null; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # ────────────────────────────────────────────────
+      # Commit only when logically changed
+      # ────────────────────────────────────────────────
+      - name: Commit and push if changed
+        if: steps.logicaldiff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add availability/availability.json
+          git commit -m "chore(availability): auto-update feed"
+          git push
+
+      - name: No changes detected
+        if: steps.logicaldiff.outputs.changed != 'true'
+        run: echo "No logical changes; skipping commit."

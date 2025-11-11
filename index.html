@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Blue Dream & Studio 9 — Komotini Rentals</title>
+    <meta
+      name="description"
+      content="Two minimalist holiday rentals near Komotini: Blue Dream and Studio 9. Book direct."
+    />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="Blue Dream & Studio 9 — Komotini Rentals"
+    />
+    <meta
+      property="og:description"
+      content="Two minimalist holiday rentals near Komotini. Book direct."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/cover.jpg" />
+    <meta property="og:url" content="index.html" />
+
+    <!-- Minimal favicon (optional, replace later) -->
+    <link rel="icon" href="assets/favicon.png" />
+    <link rel="alternate" hreflang="en" href="index.html" />
+    <link rel="alternate" hreflang="el" href="index-gr.html" />
+    <link rel="alternate" hreflang="tr" href="index-tr.html" />
+    <link rel="alternate" hreflang="bg" href="index-bg.html" />
+
+    <link rel="preload" href="hero.jpg" as="image" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="script.js"></script>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LodgingBusiness",
+        "name": "Blue Dream & Studio 9",
+        "description": "Two minimalist holiday rentals near Komotini: Blue Dream and Studio 9.",
+        "url": "index.html",
+        "image": ["properties/blue-dream/assets/1.jpeg", "properties/studio-9/assets/1.jpeg"],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Komotini",
+          "addressCountry": "GR"
+        },
+        "amenityFeature": [
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "Wi-Fi",
+            "value": true
+          },
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "Air conditioning",
+            "value": true
+          }
+        ],
+        "makesOffer": [
+          { "@type": "Offer", "name": "Blue Dream" },
+          { "@type": "Offer", "name": "Studio 9" }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">Blue Dream & Studio 9</a>
+        <nav>
+          <a href="properties/blue-dream/index.html">Blue Dream</a>
+          <a href="properties/studio-9/index.html">Studio 9</a>
+          <a href="#location">Location</a>
+          <a href="#contact" class="btn">Book</a>
+          <span class="pill" style="margin-left: 12px">
+            <a href="index.html" aria-label="English">🇬🇧</a> ·
+            <a href="index-gr.html" aria-label="Ελληνικά">🇬🇷</a> ·
+            <a href="index-tr.html" aria-label="Türkçe">🇹🇷</a> ·
+            <a href="index-bg.html" aria-label="Български">🇧🇬</a>
+          </span>
+        </nav>
+      </div>
+    </header>
+
+    <section id="top" class="hero">
+      <picture>
+        <img
+          src="hero.jpg"
+          alt="Aegean vibe in the center of Komotini"
+          loading="eager"
+          style="display: block; width: 100%; height: 62vh; object-fit: cover"
+        />
+      </picture>
+      <div class="hero-text container">
+        <h1>Two stays. One simple booking.</h1>
+        <p>
+          Pick Aegean vibes at <strong>Blue Dream</strong> near the center or
+          stay at <strong>Studio 9</strong> in Komotini.
+        </p>
+        <div class="cta">
+          <a class="btn" href="properties/blue-dream/index.html">Explore Blue Dream</a>
+          <a class="btn outline" href="properties/studio-9/index.html">Explore Studio 9</a>
+        </div>
+      </div>
+    </section>
+
+    <main class="container">
+      <!-- BLUE DREAM -->
+      <section id="bluedream" class="listing">
+        <div class="listing-head">
+          <h2>Blue Dream</h2>
+          <span class="pill">Center • 1 Bedroom • 2 guests</span>
+        </div>
+        <div class="grid">
+          <div class="gallery">
+            <figure>
+              <img
+                src="properties/blue-dream/assets/1.jpeg"
+                alt="Blue Dream living room area"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/blue-dream/assets/2.jpeg"
+                alt="Blue Dream bedroom"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/blue-dream/assets/3.jpeg"
+                alt="Blue Dream kitchen"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/blue-dream/assets/4.jpeg"
+                alt="Blue Dream bathroom"
+                loading="lazy"
+              />
+            </figure>
+          </div>
+          <div class="details">
+            <p>
+              Minimal design, quiet street, 30 minutes drive to beaches. Perfect
+              base for exploring Rodopi & Thrace.
+            </p>
+            <ul class="amenities">
+              <li>🚗 Free street parking</li>
+              <li>📶 Fast Wi-Fi</li>
+              <li>❄️ A/C</li>
+              <li>🧺 Washer/Dryer</li>
+              <li>🍳 Equipped kitchenette</li>
+              <li>🛏 Queen bed + sofa bed</li>
+            </ul>
+            <div class="actions">
+              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Blue Dream"
+                >Request dates</a
+              >
+              <a
+                class="btn outline"
+                href="#" data-map-link="blue-dream"
+                target="_blank"
+                rel="noopener"
+                >Open in Maps</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STUDIO 9 -->
+      <section id="studio9" class="listing">
+        <div class="listing-head">
+          <h2>Studio 9</h2>
+          <span class="pill">Near Center • Studio • 2 guests</span>
+        </div>
+        <div class="grid">
+          <div class="gallery">
+            <figure>
+              <img
+                src="properties/studio-9/assets/1.jpeg"
+                alt="Studio 9 bed"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/studio-9/assets/2.jpeg"
+                alt="Studio 9 workspace"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/studio-9/assets/3.jpeg"
+                alt="Studio 9 kitchen"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/studio-9/assets/4.jpeg"
+                alt="Studio 9 bathroom"
+                loading="lazy"
+              />
+            </figure>
+          </div>
+          <div class="details">
+            <p>
+              Sleek, minimalist, and 7 minutes walking from Spathi. Ideal for
+              solo travelers or couples on a city break.
+            </p>
+            <ul class="amenities">
+              <li>🏙 Walkable location</li>
+              <li>📶 Fast Wi-Fi</li>
+              <li>❄️ A/C</li>
+            </ul>
+            <div class="actions">
+              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Studio 9"
+                >Request dates</a
+              >
+              <a
+                class="btn outline"
+                href="#" data-map-link="studio-9"
+                target="_blank"
+                rel="noopener"
+                >Open in Maps</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOCATION -->
+      <section id="location" class="location">
+        <h2>Location</h2>
+        <p>
+          Base in Komotini (Rodopi). Beaches of Fanari ≈ 30 km. Easy access to
+          Alexandroupoli & Xanthi.
+        </p>
+        <iframe
+          id="map"
+          src="https://www.google.com/maps?q=Komotini,+Greece&amp;hl=en&amp;z=14&amp;output=embed"
+          width="100%"
+          height="350"
+          style="border-radius: 12px; margin-bottom: 1.5rem"
+          frameborder="0"
+          allowfullscreen=""
+          aria-hidden="false"
+          tabindex="0"
+        ></iframe>
+      </section>
+
+      <!-- CONTACT / BOOK -->
+      <section id="contact" class="contact">
+        <h2>Book Direct</h2>
+        <p>
+          No platform fees. Send your dates and preferred rental—reply within
+          hours.
+        </p>
+
+        <form id="bookingForm" data-booking-form>
+          <div class="form-row">
+            <label for="rental">Rental</label>
+            <select id="rental" name="rental" required>
+              <option value="Blue Dream">Blue Dream</option>
+              <option value="Studio 9">Studio 9</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="checkin">Check-in</label>
+            <input type="date" id="checkin" name="checkin" required />
+          </div>
+          <div class="form-row">
+            <label for="checkout">Check-out</label>
+            <input type="date" id="checkout" name="checkout" required />
+          </div>
+          <div class="form-row">
+            <label for="guests">Guests</label>
+            <input
+              type="number"
+              id="guests"
+              name="guests"
+              min="1"
+              max="4"
+              value="2"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="name">Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              autocomplete="name"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="message">Notes (optional)</label>
+            <textarea
+              id="message"
+              name="message"
+              rows="3"
+              placeholder="Flight times, questions, etc."
+            ></textarea>
+          </div>
+          <button type="submit" class="btn">Send request</button>
+          <p class="muted">
+            This static site opens your mail app with a prefilled email (no data
+            stored here).
+          </p>
+        </form>
+
+        <div class="alt-contact">
+          <a class="btn outline" href="#" data-contact="phone">Call</a>
+          <a class="btn outline" href="#" data-contact="whatsapp">WhatsApp</a>
+          <a class="btn outline" href="#" data-contact="email">Email</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <small
+          >© <span id="year"></span> Blue Dream & Studio 9 • Komotini,
+          Greece</small
+        >
+        <div class="links">
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
