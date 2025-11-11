@@ -23,6 +23,10 @@ const EURO_FORMATTER = new Intl.NumberFormat(undefined, {
   style: "currency",
   currency: "EUR",
 });
+const MIN_NIGHTS_BY_SLUG = {
+  "blue-dream": 2,
+  studio9: 3,
+};
 
 //#endregion
 
@@ -554,6 +558,11 @@ function buildPricingDetails(state, startDate, endDate) {
   return `• ${parts.join(" • ")}`;
 }
 
+function getMinimumNights(slug) {
+  const key = typeof slug === "string" ? slug.toLowerCase() : "";
+  return MIN_NIGHTS_BY_SLUG[key] || 1;
+}
+
 //#endregion
 
 // ───────────────────────────── CTA State
@@ -587,6 +596,27 @@ function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   if (!state || !startDate || !endDate) return;
   if (state.cta) {
     state.cta.hidden = false;
+  }
+  const nights = calculateNightCount(startDate, endDate);
+  const minNights = getMinimumNights(state.rateSlug);
+  if (nights < minNights) {
+    if (state.summaryEl) {
+      state.summaryEl.textContent = `Minimum ${minNights} nights for this property.`;
+    }
+    if (state.bookBtn) {
+      state.bookBtn.disabled = true;
+    }
+    if (state.sendBtn) {
+      state.sendBtn.disabled = true;
+    }
+    if (state.payBtn) {
+      state.payBtn.disabled = true;
+    }
+    if (state.cancelBtn) {
+      state.cancelBtn.disabled = true;
+    }
+    maybeScrollCTAIntoView(state.cta);
+    return;
   }
   const labelText = propertyLabel || "your property";
   const startLabel = formatReadableDate(startDate);
