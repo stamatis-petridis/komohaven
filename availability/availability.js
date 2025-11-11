@@ -574,6 +574,9 @@ function setCTADefaultState(state) {
   if (state.bookBtn) {
     state.bookBtn.disabled = true;
   }
+  if (state.payBtn) {
+    state.payBtn.disabled = true;
+  }
   if (state.cancelBtn) {
     state.cancelBtn.disabled = true;
   }
@@ -600,6 +603,16 @@ function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   }
   if (state.sendBtn) {
     state.sendBtn.disabled = false;
+  }
+  if (state.payBtn) {
+    const eligibleSlug =
+      typeof state.rateSlug === "string"
+        ? state.rateSlug.toLowerCase()
+        : "";
+    const hasLink =
+      typeof state.payBtn.getAttribute === "function" &&
+      !!state.payBtn.getAttribute("data-stripe-link");
+    state.payBtn.disabled = !(eligibleSlug === "studio9" && hasLink);
   }
   if (state.cancelBtn) {
     state.cancelBtn.disabled = false;
@@ -713,6 +726,16 @@ function ensureAvailabilityCTA(root) {
   if (sendBtnEl) {
     sendBtnEl.disabled = true;
   }
+  const payBtnEl = bar.querySelector("[data-availability-pay]");
+  if (payBtnEl) {
+    if (!payBtnEl.classList.contains("btn")) {
+      payBtnEl.classList.add("btn");
+    }
+    if (!payBtnEl.hasAttribute("type")) {
+      payBtnEl.setAttribute("type", "button");
+    }
+    payBtnEl.disabled = true;
+  }
   if (cancelBtnEl) {
     cancelBtnEl.disabled = true;
   }
@@ -721,6 +744,7 @@ function ensureAvailabilityCTA(root) {
     summaryEl,
     bookBtn: bookBtnEl,
     sendBtn: sendBtnEl,
+    payBtn: payBtnEl || null,
     cancelBtn: cancelBtnEl,
   };
 }
@@ -767,6 +791,7 @@ function setupRangeSelection(
       rateCents: resolveNightlyRateCents(rateSlug),
       bookBtn: ctaRefs.bookBtn || null,
       sendBtn: ctaRefs.sendBtn || null,
+      payBtn: ctaRefs.payBtn || null,
       cancelBtn: ctaRefs.cancelBtn || null,
       updatedLabel: updatedLabel || "recently",
     };
@@ -900,6 +925,7 @@ function setupRangeSelection(
     }
     state.bookBtn = ctaRefs.bookBtn || state.bookBtn || null;
     state.sendBtn = ctaRefs.sendBtn || state.sendBtn || null;
+    state.payBtn = ctaRefs.payBtn || state.payBtn || null;
     state.cancelBtn = ctaRefs.cancelBtn || state.cancelBtn || null;
     state.updatedLabel = updatedLabel || state.updatedLabel || "recently";
     setCTADefaultState(state);
@@ -933,6 +959,28 @@ function setupRangeSelection(
       if (!launched) {
         console.warn("WhatsApp contact number is not available.");
         return;
+      }
+      if (typeof state.clearSelection === "function") {
+        state.clearSelection();
+      }
+    });
+  }
+
+  if (state.payBtn && !state.payBtn.dataset.availabilityBound) {
+    state.payBtn.dataset.availabilityBound = "true";
+    state.payBtn.addEventListener("click", () => {
+      const slug =
+        typeof state.rateSlug === "string" ? state.rateSlug.toLowerCase() : "";
+      if (slug !== "studio9") return;
+      if (state.payBtn && state.payBtn.disabled) return;
+      const link =
+        typeof state.payBtn.getAttribute === "function"
+          ? state.payBtn.getAttribute("data-stripe-link")
+          : "";
+      if (!link) return;
+      const win = window.open(link, "_blank", "noopener");
+      if (win && typeof win.opener !== "undefined") {
+        win.opener = null;
       }
       if (typeof state.clearSelection === "function") {
         state.clearSelection();
