@@ -63,7 +63,7 @@
         </p>
         <div class="cta">
           <a class="btn" href="#details">View Details</a>
-          <a class="btn outline" href="#contact">Book Now</a>
+          <a class="btn outline" href="#availability">Book Now</a>
         </div>
       </div>
     </section>
@@ -194,58 +194,6 @@
         <div id="map" class="map-placeholder" data-map="leaflet">
           Map loading…
         </div>
-      </section>
-
-      <section id="contact" class="contact">
-        <h2>Request Dates</h2>
-        <form id="bookingForm" data-booking-form>
-          <input type="hidden" id="rental" name="rental" value="Studio 9" />
-          <div class="form-row">
-            <label for="checkin">Check-in</label>
-            <input id="checkin" name="checkin" type="date" required />
-          </div>
-          <div class="form-row">
-            <label for="checkout">Check-out</label>
-            <input id="checkout" name="checkout" type="date" required />
-          </div>
-          <div class="form-row">
-            <label for="guests">Guests</label>
-            <input
-              id="guests"
-              name="guests"
-              type="number"
-              min="1"
-              max="3"
-              value="2"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="name">Name</label>
-            <input id="name" name="name" type="text" required />
-          </div>
-          <div class="form-row">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" required />
-          </div>
-          <div class="form-row" style="grid-column: span 2">
-            <label for="message">Message (optional)</label>
-            <textarea id="message" name="message" rows="3"></textarea>
-          </div>
-          <div style="grid-column: span 2">
-            <div
-              id="availability-note"
-              class="muted"
-              style="min-height: 1.25rem;"
-            >
-              Check the calendar above for booked dates. We will confirm your
-              stay via email.
-            </div>
-          </div>
-          <div style="grid-column: span 2">
-            <button class="btn" type="submit">Send Booking Request</button>
-          </div>
-        </form>
       </section>
     </main>
 

@@ -242,26 +242,6 @@ main {
 
 /* #endregion */
 
-/* ───────────────────────────── Contact Form Layout ───────────────────────────── */
-/* #region Contact Form Layout */
-
-.contact form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  padding: 18px;
-  border-radius: 16px;
-}
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* #endregion */
-
 /* ───────────────────────────── Availability — Shell ───────────────────────────── */
 /* #region Availability — Shell */
 
@@ -485,36 +465,6 @@ main {
     margin-top: 14px;
   }
 
-  .contact form {
-    grid-template-columns: 1fr;
-    padding: 18px 16px;
-    gap: 14px;
-  }
-
-  .form-row input,
-  .form-row select,
-  .form-row textarea {
-    width: 100%;
-    min-height: 44px;
-    padding: 12px 14px;
-  }
-
-  .form-row select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding-right: 2.5rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8a1 1 0 0 1-.71-.29l-5-5A1 1 0 0 1 1.42.29L6 4.87 10.58.29a1 1 0 0 1 1.41 1.42l-5 5A1 1 0 0 1 6 8Z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 12px auto;
-  }
-
-  .contact .btn {
-    width: 100%;
-    min-height: 48px;
-    margin-top: 4px;
-  }
-
   .availability-cta-actions .btn,
   .availability-cta-actions .btn.outline {
     min-height: 48px;
@@ -678,35 +628,6 @@ body.lightbox-open {
 
 /* #endregion */
 
-/* ───────────────────────────── Contact Form Controls ───────────────────────────── */
-/* #region Contact Form Controls */
-
-/* Shared input theming for the contact form and CTA prefill fields. */
-.form-row input,
-.form-row select,
-.form-row textarea {
-  background: #0f1114;
-  border: 1px solid var(--line);
-  color: var(--fg);
-  padding: 10px 12px;
-  border-radius: 10px;
-}
-.form-row textarea {
-  grid-column: 1/-1;
-}
-.contact .btn {
-  grid-column: 1/-1;
-  width: fit-content;
-}
-.alt-contact {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-
-/* #endregion */
-
 /* ───────────────────────────── Footer ───────────────────────────── */
 /* #region Footer */
 
@@ -744,11 +665,8 @@ body.lightbox-open {
 }
 /* #endregion */
 
-/* #region Breakpoint ≤640px (form + gallery stacking) */
+/* #region Breakpoint ≤640px (gallery stacking) */
 @media (max-width: 640px) {
-  .contact form {
-    grid-template-columns: 1fr;
-  }
   .gallery {
     grid-template-columns: 1fr 1fr;
   }

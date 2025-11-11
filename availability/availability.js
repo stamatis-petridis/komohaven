@@ -495,58 +495,6 @@ function maybeScrollCTAIntoView(element) {
   }
 }
 
-// Prefill the booking form with the selected date range and scroll into view.
-function prefillBookingForm(root, propertyLabel, startDate, endDate) {
-  if (!startDate || !endDate) return false;
-  const scope =
-    (root &&
-      typeof root.closest === "function" &&
-      root.closest("main")) ||
-    document;
-  const form =
-    (scope &&
-      typeof scope.querySelector === "function" &&
-      scope.querySelector("form[data-booking-form]")) ||
-    document.querySelector("form[data-booking-form]");
-  if (!(form instanceof HTMLFormElement)) {
-    return false;
-  }
-
-  const setValue = (name, value) => {
-    if (!value) return;
-    const field = form.querySelector(`[name="${name}"]`);
-    if (field && "value" in field) {
-      field.value = value;
-    }
-  };
-
-  setValue("checkin", formatISODate(startDate));
-  setValue("checkout", formatISODate(endDate));
-  if (propertyLabel) {
-    setValue("rental", propertyLabel);
-  }
-
-  const scrollTarget =
-    form.closest("#contact") || form.parentElement || form;
-  if (scrollTarget && typeof scrollTarget.scrollIntoView === "function") {
-    const prefersReducedMotion =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    scrollTarget.scrollIntoView({
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-      block: "start",
-    });
-  }
-
-  const focusTarget =
-    form.querySelector('[name="name"]') ||
-    form.querySelector("input, textarea, select");
-  if (focusTarget && typeof focusTarget.focus === "function") {
-    focusTarget.focus({ preventScroll: true });
-  }
-  return true;
-}
-
 function resolveNightlyRateCents(slug) {
   const key = String(slug || "").toLowerCase();
   if (!key) return null;
@@ -981,14 +929,10 @@ function setupRangeSelection(
       if (state.bookBtn && state.bookBtn.disabled) return;
       if (!state.startDate || !state.endDate) return;
       const label = state.propertyLabel || propertyLabel || "";
-      const filled = prefillBookingForm(
-        root,
-        label,
-        state.startDate,
-        state.endDate
-      );
-      if (!filled) {
-        console.warn("Booking form is not available on this page.");
+      const launched = openWhatsApp(label, state.startDate, state.endDate);
+      if (!launched) {
+        console.warn("WhatsApp contact number is not available.");
+        return;
       }
       if (typeof state.clearSelection === "function") {
         state.clearSelection();

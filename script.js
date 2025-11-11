@@ -63,55 +63,6 @@
     });
   };
 
-  const initRentalPrefill = () => {
-    const buttons = document.querySelectorAll("[data-prefill-rental]");
-    if (!buttons.length) return;
-
-    buttons.forEach((btn) => {
-      const value = btn.dataset.prefillRental;
-      const targetSelector = btn.dataset.prefillTarget || "[data-booking-form]";
-
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(targetSelector).forEach((targetForm) => {
-          const rentalField = targetForm.querySelector('[name="rental"]');
-          if (rentalField) rentalField.value = value;
-        });
-      });
-    });
-  };
-
-  const buildMailtoLink = (form) => {
-    const data = Object.fromEntries(new FormData(form).entries());
-    const subject = `Booking request — ${data.rental ?? ""}`;
-    const body = [
-      `Rental: ${data.rental ?? ""}`,
-      `Check-in: ${data.checkin ?? ""}`,
-      `Check-out: ${data.checkout ?? ""}`,
-      `Guests: ${data.guests ?? ""}`,
-      `Name: ${data.name ?? ""}`,
-      `Email: ${data.email ?? ""}`,
-      data.message ? `Notes: ${data.message}` : null,
-    ]
-      .filter(Boolean)
-      .join("%0D%0A");
-
-    return `mailto:${CONTACT.email}?subject=${encodeURIComponent(
-      subject
-    )}&body=${body}`;
-  };
-
-  const initBookingForms = () => {
-    const forms = document.querySelectorAll("form[data-booking-form]");
-    if (!forms.length) return;
-
-    forms.forEach((form) => {
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-        window.location.href = buildMailtoLink(form);
-      });
-    });
-  };
-
   const initLightbox = () => {
     const galleryImages = document.querySelectorAll(".gallery img");
     if (!galleryImages.length) return;
@@ -206,8 +157,6 @@
   domReady(() => {
     setContactLinks();
     setMapLinks();
-    initRentalPrefill();
-    initBookingForms();
     initLightbox();
     updateYear();
     initLeafletMap();

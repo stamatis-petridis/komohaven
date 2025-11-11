@@ -76,7 +76,7 @@
           <a href="#bluedream">Blue Dream</a>
           <a href="#studio9">Studio 9</a>
           <a href="#location">Τοποθεσία</a>
-          <a href="#contact" class="btn">Κράτηση</a>
+          <a href="#bluedream" class="btn">Κράτηση</a>
           <span class="pill" style="margin-left: 12px">
             <a href="index.html" aria-label="English">🇬🇧</a> · 🇬🇷 ·
             <a href="index-tr.html" aria-label="Türkçe">🇹🇷</a> ·
@@ -160,7 +160,9 @@
               <li>🛏 Διπλό κρεβάτι + καναπές-κρεβάτι</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Blue Dream"
+              <a
+                class="btn"
+                href="properties/blue-dream/index.html#availability"
                 >Αίτημα ημερομηνιών</a
               >
               <a
@@ -223,7 +225,9 @@
               <li>❄️ Κλιματισμός</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Studio 9"
+              <a
+                class="btn"
+                href="properties/studio-9/index.html#availability"
                 >Αίτημα ημερομηνιών</a
               >
               <a
@@ -259,84 +263,6 @@
         </iframe>
       </section>
 
-      <!-- CONTACT -->
-      <section id="contact" class="contact">
-        <h2>Κράτηση Απευθείας</h2>
-        <p>
-          Χωρίς προμήθειες. Στείλτε ημερομηνίες και προτιμώμενο διαμέρισμα —
-          απαντάμε σύντομα.
-        </p>
-
-        <form id="bookingForm" data-booking-form>
-          <div class="form-row">
-            <label for="rental">Διαμέρισμα</label>
-            <select id="rental" name="rental" required>
-              <option value="Blue Dream">Blue Dream</option>
-              <option value="Studio 9">Studio 9</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="checkin">Άφιξη</label>
-            <input type="date" id="checkin" name="checkin" required />
-          </div>
-          <div class="form-row">
-            <label for="checkout">Αναχώρηση</label>
-            <input type="date" id="checkout" name="checkout" required />
-          </div>
-          <div class="form-row">
-            <label for="guests">Άτομα</label>
-            <input
-              type="number"
-              id="guests"
-              name="guests"
-              min="1"
-              max="4"
-              value="2"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="name">Όνομα</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              autocomplete="name"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              autocomplete="email"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="message">Σημειώσεις (προαιρετικό)</label>
-            <textarea
-              id="message"
-              name="message"
-              rows="3"
-              placeholder="Ώρες άφιξης, ερωτήσεις κ.λπ."
-            ></textarea>
-          </div>
-          <button type="submit" class="btn">Αποστολή αιτήματος</button>
-          <p class="muted">
-            Η φόρμα ανοίγει την εφαρμογή email με έτοιμο μήνυμα (δεν
-            αποθηκεύουμε δεδομένα εδώ).
-          </p>
-        </form>
-
-        <div class="alt-contact">
-          <a class="btn outline" href="#" data-contact="phone">Τηλέφωνο</a>
-          <a class="btn outline" href="#" data-contact="whatsapp">WhatsApp</a>
-          <a class="btn outline" href="#" data-contact="email">Email</a>
-        </div>
-      </section>
     </main>
 
     <footer class="footer">

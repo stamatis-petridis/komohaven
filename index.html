@@ -74,7 +74,7 @@
           <a href="properties/blue-dream/index.html">Blue Dream</a>
           <a href="properties/studio-9/index.html">Studio 9</a>
           <a href="#location">Location</a>
-          <a href="#contact" class="btn">Book</a>
+          <a href="#bluedream" class="btn">Book</a>
           <span class="pill" style="margin-left: 12px">
             <a href="index.html" aria-label="English">🇬🇧</a> ·
             <a href="index-gr.html" aria-label="Ελληνικά">🇬🇷</a> ·
@@ -159,7 +159,9 @@
               <li>🛏 Queen bed + sofa bed</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Blue Dream"
+              <a
+                class="btn"
+                href="properties/blue-dream/index.html#availability"
                 >Request dates</a
               >
               <a
@@ -222,7 +224,9 @@
               <li>❄️ A/C</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Studio 9"
+              <a
+                class="btn"
+                href="properties/studio-9/index.html#availability"
                 >Request dates</a
               >
               <a
@@ -257,84 +261,6 @@
         ></iframe>
       </section>
 
-      <!-- CONTACT / BOOK -->
-      <section id="contact" class="contact">
-        <h2>Book Direct</h2>
-        <p>
-          No platform fees. Send your dates and preferred rental—reply within
-          hours.
-        </p>
-
-        <form id="bookingForm" data-booking-form>
-          <div class="form-row">
-            <label for="rental">Rental</label>
-            <select id="rental" name="rental" required>
-              <option value="Blue Dream">Blue Dream</option>
-              <option value="Studio 9">Studio 9</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="checkin">Check-in</label>
-            <input type="date" id="checkin" name="checkin" required />
-          </div>
-          <div class="form-row">
-            <label for="checkout">Check-out</label>
-            <input type="date" id="checkout" name="checkout" required />
-          </div>
-          <div class="form-row">
-            <label for="guests">Guests</label>
-            <input
-              type="number"
-              id="guests"
-              name="guests"
-              min="1"
-              max="4"
-              value="2"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="name">Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              autocomplete="name"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              autocomplete="email"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="message">Notes (optional)</label>
-            <textarea
-              id="message"
-              name="message"
-              rows="3"
-              placeholder="Flight times, questions, etc."
-            ></textarea>
-          </div>
-          <button type="submit" class="btn">Send request</button>
-          <p class="muted">
-            This static site opens your mail app with a prefilled email (no data
-            stored here).
-          </p>
-        </form>
-
-        <div class="alt-contact">
-          <a class="btn outline" href="#" data-contact="phone">Call</a>
-          <a class="btn outline" href="#" data-contact="whatsapp">WhatsApp</a>
-          <a class="btn outline" href="#" data-contact="email">Email</a>
-        </div>
-      </section>
     </main>
 
     <footer class="footer">
