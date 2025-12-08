@@ -77,7 +77,7 @@
           <a href="#bluedream">Blue Dream</a>
           <a href="#studio9">Studio 9</a>
           <a href="#location">Местоположение</a>
-          <a href="#contact" class="btn">Резервация</a>
+          <a href="properties/blue-dream/index.html#availability" class="btn">Резервация</a>
           <span class="pill" style="margin-left: 12px">
             <a href="index.html" aria-label="English">🇬🇧</a> ·
             <a href="index-gr.html" aria-label="Ελληνικά">🇬🇷</a> ·
@@ -161,8 +161,8 @@
               <li>🛏 Спалня + разтегателен диван</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Blue Dream"
-                >Заявка за дати</a
+              <a class="btn" href="properties/blue-dream/index.html#availability"
+                >Виж наличност</a
               >
               <a
                 class="btn outline"
@@ -224,8 +224,8 @@
               <li>❄️ Климатик</li>
             </ul>
             <div class="actions">
-              <a class="btn" href="#contact" data-prefill-target="#bookingForm" data-prefill-rental="Studio 9"
-                >Заявка за дати</a
+              <a class="btn" href="properties/studio-9/index.html#availability"
+                >Виж наличност</a
               >
               <a
                 class="btn outline"
@@ -260,84 +260,6 @@
         </iframe>
       </section>
 
-      <!-- CONTACT / BOOK -->
-      <section id="contact" class="contact">
-        <h2>Резервация директно</h2>
-        <p>
-          Без такси за платформи. Изпратете желаните дати и предпочитан
-          апартамент — отговаряме бързо.
-        </p>
-
-        <form id="bookingForm" data-booking-form>
-          <div class="form-row">
-            <label for="rental">Апартамент</label>
-            <select id="rental" name="rental" required>
-              <option value="Blue Dream">Blue Dream</option>
-              <option value="Studio 9">Studio 9</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="checkin">Настаняване</label>
-            <input type="date" id="checkin" name="checkin" required />
-          </div>
-          <div class="form-row">
-            <label for="checkout">Освобождаване</label>
-            <input type="date" id="checkout" name="checkout" required />
-          </div>
-          <div class="form-row">
-            <label for="guests">Гости</label>
-            <input
-              type="number"
-              id="guests"
-              name="guests"
-              min="1"
-              max="4"
-              value="2"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="name">Име</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              autocomplete="name"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              autocomplete="email"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <label for="message">Бележки (по избор)</label>
-            <textarea
-              id="message"
-              name="message"
-              rows="3"
-              placeholder="Часове на пристигане, въпроси и др."
-            ></textarea>
-          </div>
-          <button type="submit" class="btn">Изпрати заявка</button>
-          <p class="muted">
-            Този статичен сайт отваря вашето имейл приложение с попълнено
-            съобщение (не съхраняваме данни тук).
-          </p>
-        </form>
-
-        <div class="alt-contact">
-          <a class="btn outline" href="#" data-contact="phone">Телефон</a>
-          <a class="btn outline" href="#" data-contact="whatsapp">WhatsApp</a>
-          <a class="btn outline" href="#" data-contact="email">Email</a>
-        </div>
-      </section>
     </main>
 
     <footer class="footer">
