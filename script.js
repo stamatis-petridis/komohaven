@@ -1,14 +1,24 @@
 (() => {
-  const CONTACT = {
+  const CONFIG = window.KOMO_CONFIG || {};
+  const CONTACT = CONFIG.contact || {
     phoneE164: "+306932647201",
     whatsappNumber: "306932647201",
     email: "rodipasx@gmail.com",
   };
 
-  const MAP_LINKS = {
-    "blue-dream": "https://maps.app.goo.gl/4yh65CaNSKpPbDjH8",
-    "studio-9": "https://maps.app.goo.gl/UnqJnzg1pjv87f8z8",
-  };
+  const MAP_LINKS = Object.fromEntries(
+    Object.entries(CONFIG.maps || {}).map(([key, value]) => [
+      key,
+      value && value.profile ? value.profile : value,
+    ])
+  );
+
+  const MAP_EMBEDS = Object.fromEntries(
+    Object.entries(CONFIG.maps || {}).map(([key, value]) => [
+      key,
+      value && value.embed ? value.embed : null,
+    ])
+  );
 
   const domReady = (fn) => {
     if (document.readyState === "loading") {
@@ -43,10 +53,20 @@
     document.querySelectorAll("[data-map-link]").forEach((el) => {
       const key = el.dataset.mapLink;
       const href = MAP_LINKS[key] || "";
-      if (!href) return;
-      el.setAttribute("href", href);
-      el.setAttribute("target", "_blank");
-      el.setAttribute("rel", "noopener");
+      const embed = MAP_EMBEDS[key] || null;
+      if (!href && !embed) return;
+      const tag = el.tagName.toLowerCase();
+      if (tag === "iframe") {
+        const src = embed || href;
+        if (!src) return;
+        el.setAttribute("src", src);
+        el.setAttribute("loading", "lazy");
+      } else {
+        if (!href) return;
+        el.setAttribute("href", href);
+        el.setAttribute("target", "_blank");
+        el.setAttribute("rel", "noopener");
+      }
     });
   };
 

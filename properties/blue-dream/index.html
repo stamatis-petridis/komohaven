@@ -26,6 +26,7 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="../../styles.css" />
+    <script defer src="../../config.js"></script>
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       crossorigin=""
@@ -188,10 +189,16 @@
 
       <section id="location" class="location">
         <h2>Location</h2>
-        <!-- Leaflet map target; data-map hook allows script.js to hydrate the interactive map -->
-        <div id="map" class="map-placeholder" data-map="leaflet">
-          Map loading…
-        </div>
+        <iframe
+          title="Blue Dream on Google Maps"
+          data-map-link="blue-dream"
+          width="100%"
+          height="320"
+          style="border: 0; border-radius: 16px"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
       </section>
 
       <section id="contact" class="contact">
