@@ -1,4 +1,4 @@
-# Blue Dream & Studio 9 — Autonomous Agent Guide
+# Komo haven — Autonomous Agent Guide
 
 This document orients an autonomous agent that maintains or extends the Komotini rentals marketing site contained in this repository.
 

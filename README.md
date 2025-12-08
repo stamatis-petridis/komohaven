@@ -1,4 +1,4 @@
-# Blue Dream & Studio 9 — Komotini Rentals Website
+# Komo haven — Komotini Rentals Website
 
 A multilingual static website for two rental properties in Komotini, Greece:
 
