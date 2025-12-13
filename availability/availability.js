@@ -537,6 +537,7 @@ function setCTADefaultState(state) {
   if (state.cancelBtn) {
     state.cancelBtn.disabled = true;
   }
+  resetReserveButton(state);
 }
 
 function calculateNightCount(startDate, endDate) {
@@ -550,6 +551,96 @@ function calculateNightCount(startDate, endDate) {
   );
   return Math.max(1, diffDays);
 }
+
+const formatCurrency = (amountCents, currency = CONFIG_CURRENCY) => {
+  if (typeof amountCents !== "number") return null;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amountCents / 100);
+  } catch (error) {
+    console.warn("Unable to format currency", error);
+    return null;
+  }
+};
+
+const resetReserveButton = (state) => {
+  if (!state || !state.reserveBtn) return;
+  state.reserveBtn.disabled = true;
+  state.reserveBtn.textContent = "Reserve";
+  state.reserveTotalCents = null;
+  state.reserveNights = null;
+};
+
+const updateReserveButton = (state, nights) => {
+  if (!state || !state.reserveBtn) return;
+  resetReserveButton(state);
+  if (!nights || nights <= 0) return;
+  const minNights = state.minNights || 1;
+  if (minNights && nights < minNights) return;
+  const rateCents = getConfiguredRate(state.slug);
+  if (typeof rateCents !== "number") return;
+  const totalCents = rateCents * nights;
+  const label = formatCurrency(totalCents, state.currency || CONFIG_CURRENCY);
+  if (!label) return;
+  state.reserveBtn.textContent = `Reserve for ${label}`;
+  state.reserveBtn.disabled = false;
+  state.reserveTotalCents = totalCents;
+  state.reserveNights = nights;
+  state.rateCents = rateCents;
+};
+
+const handleReserveIntent = (state) => {
+  if (!state || !state.reserveBtn || state.reserveBtn.disabled) return;
+  const { startDate, endDate } = state;
+  if (!(startDate instanceof Date) || !(endDate instanceof Date)) return;
+  const nights =
+    state.reserveNights || calculateNightCount(startDate, endDate) || 0;
+  if (nights <= 0) return;
+  const rateCents =
+    typeof state.rateCents === "number"
+      ? state.rateCents
+      : getConfiguredRate(state.slug);
+  const totalCents =
+    typeof state.reserveTotalCents === "number"
+      ? state.reserveTotalCents
+      : typeof rateCents === "number"
+        ? rateCents * nights
+        : null;
+  const payload = {
+    slug: state.slug || "",
+    propertyLabel: state.propertyLabel || "",
+    startISO: formatISODate(startDate),
+    endISO: formatISODate(endDate),
+    nights,
+    totalCents: typeof totalCents === "number" ? totalCents : null,
+    rateCents: typeof rateCents === "number" ? rateCents : null,
+    currency: state.currency || CONFIG_CURRENCY,
+  };
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("komo_booking_context", JSON.stringify(payload));
+    }
+  } catch (_) {
+    // Swallow storage errors quietly.
+  }
+
+  const params = new URLSearchParams();
+  if (payload.slug) params.set("slug", payload.slug);
+  if (payload.startISO) params.set("start", payload.startISO);
+  if (payload.endISO) params.set("end", payload.endISO);
+  if (Number.isFinite(payload.nights)) params.set("nights", String(payload.nights));
+  if (Number.isFinite(payload.totalCents)) {
+    params.set("totalCents", String(payload.totalCents));
+  }
+  if (payload.currency) params.set("currency", payload.currency);
+  const query = params.toString();
+  const target = `/payments/pay.html${query ? `?${query}` : ""}`;
+  window.location.href = target;
+};
 
 // Populate the CTA with the active range details.
 function setCTASelectedState(state, propertyLabel, startDate, endDate) {
@@ -576,6 +667,7 @@ function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   if (state.cancelBtn) {
     state.cancelBtn.disabled = false;
   }
+  updateReserveButton(state, nights);
   maybeScrollCTAIntoView(state.cta);
 }
 
@@ -613,7 +705,15 @@ function ensureAvailabilityCTA(root) {
     cancelBtn.textContent = "Clear";
     cancelBtn.disabled = true;
 
+    const reserveBtn = document.createElement("button");
+    reserveBtn.type = "button";
+    reserveBtn.className = "btn";
+    reserveBtn.setAttribute("data-availability-reserve", "");
+    reserveBtn.textContent = "Reserve";
+    reserveBtn.disabled = true;
+
     actions.appendChild(sendBtn);
+    actions.appendChild(reserveBtn);
     actions.appendChild(cancelBtn);
     bar.appendChild(actions);
 
@@ -625,6 +725,7 @@ function ensureAvailabilityCTA(root) {
   const summaryEl = bar.querySelector("[data-availability-summary]");
   const sendBtnEl = bar.querySelector("[data-availability-send]");
   const cancelBtnEl = bar.querySelector("[data-availability-cancel]");
+  const reserveBtnEl = bar.querySelector("[data-availability-reserve]");
   if (summaryEl) {
     summaryEl.setAttribute("aria-live", "polite");
     if (!summaryEl.textContent.trim()) {
@@ -637,11 +738,16 @@ function ensureAvailabilityCTA(root) {
   if (cancelBtnEl) {
     cancelBtnEl.disabled = true;
   }
+  if (reserveBtnEl) {
+    reserveBtnEl.disabled = true;
+    reserveBtnEl.textContent = "Reserve";
+  }
   return {
     cta: bar,
     summaryEl,
     sendBtn: sendBtnEl,
     cancelBtn: cancelBtnEl,
+    reserveBtn: reserveBtnEl,
   };
 }
 
@@ -735,6 +841,12 @@ function setupRangeSelection(
       sendBtn: ctaRefs.sendBtn || null,
       cancelBtn: ctaRefs.cancelBtn || null,
       updatedLabel: updatedLabel || "recently",
+      reserveBtn: ctaRefs.reserveBtn || null,
+      slug: slug || "",
+      currency: CONFIG_CURRENCY,
+      rateCents: getConfiguredRate(slug),
+      reserveTotalCents: null,
+      reserveNights: null,
     };
     rangeSelectionStates.set(calendarEl, state);
 
@@ -871,6 +983,13 @@ function setupRangeSelection(
     state.sendBtn = ctaRefs.sendBtn || state.sendBtn || null;
     state.cancelBtn = ctaRefs.cancelBtn || state.cancelBtn || null;
     state.updatedLabel = updatedLabel || state.updatedLabel || "recently";
+    state.reserveBtn = ctaRefs.reserveBtn || state.reserveBtn || null;
+    state.slug = slug || state.slug || "";
+    state.currency = state.currency || CONFIG_CURRENCY;
+    state.rateCents =
+      typeof state.rateCents === "number"
+        ? state.rateCents
+        : getConfiguredRate(state.slug);
     setCTADefaultState(state);
   }
 
@@ -899,6 +1018,13 @@ function setupRangeSelection(
       if (typeof state.clearSelection === "function") {
         state.clearSelection();
       }
+    });
+  }
+
+  if (state.reserveBtn && !state.reserveBtn.dataset.availabilityBound) {
+    state.reserveBtn.dataset.availabilityBound = "true";
+    state.reserveBtn.addEventListener("click", () => {
+      handleReserveIntent(state);
     });
   }
 
