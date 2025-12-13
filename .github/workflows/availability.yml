@@ -53,9 +53,9 @@ jobs:
           jq 'del(.updated)' availability/availability.json > "$NEW"
 
           # fetch last committed version and normalize
-          git fetch origin main --depth=1
-          if git show origin/main:availability/availability.json >/dev/null 2>&1; then
-            git show origin/main:availability/availability.json | jq 'del(.updated)' > "$OLD"
+          git fetch origin lean --depth=1
+          if git show origin/lean:availability/availability.json >/dev/null 2>&1; then
+            git show origin/lean:availability/availability.json | jq 'del(.updated)' > "$OLD"
           else
             echo '{}' > "$OLD"
           fi
