@@ -17,7 +17,7 @@ KomoHaven is a static multilingual marketing site for two short-stay rental prop
 
 ```bash
 # Refresh availability feed (installs deps, rebuilds JSON, commits, pushes)
-./push_availability.sh
+./availability/push_availability.sh
 
 # Manual availability refresh
 python3 -m pip install -r availability/requirements.txt
