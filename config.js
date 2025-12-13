@@ -2,6 +2,7 @@
 // Update this file to reskin for another host without touching the HTML/JS.
 window.KOMO_CONFIG = {
   brand: "Komo haven",
+  currency: "EUR",
   contact: {
     phoneE164: "+306932647201",
     whatsappNumber: "306932647201",

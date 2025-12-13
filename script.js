@@ -5,6 +5,7 @@
     whatsappNumber: "306932647201",
     email: "rodipasx@gmail.com",
   };
+  const CURRENCY = CONFIG.currency || "EUR";
 
   const MAP_LINKS = Object.fromEntries(
     Object.entries(CONFIG.maps || {}).map(([key, value]) => [
@@ -19,6 +20,8 @@
       value && value.embed ? value.embed : null,
     ])
   );
+
+  const NIGHTLY_RATES_CENTS = CONFIG.ratesCents || {};
 
   const domReady = (fn) => {
     if (document.readyState === "loading") {
@@ -68,6 +71,14 @@
         el.setAttribute("rel", "noopener");
       }
     });
+  };
+
+  const getNightlyRateCents = (slug) => {
+    if (!slug) return null;
+    const key = String(slug).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(NIGHTLY_RATES_CENTS, key)
+      ? NIGHTLY_RATES_CENTS[key]
+      : null;
   };
 
   const initRentalPrefill = () => {
@@ -219,4 +230,11 @@
     updateYear();
     initLeafletMap();
   });
+
+  if (typeof window !== "undefined") {
+    window.KOMO_RATES = {
+      getNightlyRateCents,
+      currency: CURRENCY,
+    };
+  }
 })();

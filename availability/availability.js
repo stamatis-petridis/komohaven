@@ -19,6 +19,30 @@ let availabilityCachePromise;
 const CTA_DEFAULT_MESSAGE =
   "Select start and end dates to draft a WhatsApp message. Booked dates are marked below.";
 
+const GLOBAL_CONFIG =
+  (typeof window !== "undefined" && window.KOMO_CONFIG) || {};
+const CONFIG_RATES = GLOBAL_CONFIG.ratesCents || {};
+const CONFIG_CURRENCY = GLOBAL_CONFIG.currency || "EUR";
+
+function getConfiguredRate(slug) {
+  if (!slug) return null;
+  const key = String(slug).toLowerCase();
+  return Object.prototype.hasOwnProperty.call(CONFIG_RATES, key)
+    ? CONFIG_RATES[key]
+    : null;
+}
+
+if (typeof window !== "undefined") {
+  const existing = window.KOMO_RATES || {};
+  if (!existing.getNightlyRateCents) {
+    existing.getNightlyRateCents = getConfiguredRate;
+  }
+  if (!existing.currency) {
+    existing.currency = CONFIG_CURRENCY;
+  }
+  window.KOMO_RATES = existing;
+}
+
 //#endregion
 
 // ───────────────────────────── Fetch & Parse
