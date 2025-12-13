@@ -24,4 +24,8 @@ window.KOMO_CONFIG = {
     "blue-dream": 4000,
     studio9: 3000,
   },
+  minNights: {
+    "blue-dream": 2,
+    studio9: 3,
+  },
 };

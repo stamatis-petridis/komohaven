@@ -23,12 +23,21 @@ const GLOBAL_CONFIG =
   (typeof window !== "undefined" && window.KOMO_CONFIG) || {};
 const CONFIG_RATES = GLOBAL_CONFIG.ratesCents || {};
 const CONFIG_CURRENCY = GLOBAL_CONFIG.currency || "EUR";
+const CONFIG_MIN_NIGHTS = GLOBAL_CONFIG.minNights || {};
 
 function getConfiguredRate(slug) {
   if (!slug) return null;
   const key = String(slug).toLowerCase();
   return Object.prototype.hasOwnProperty.call(CONFIG_RATES, key)
     ? CONFIG_RATES[key]
+    : null;
+}
+
+function getMinNights(slug) {
+  if (!slug) return null;
+  const key = String(slug).toLowerCase();
+  return Object.prototype.hasOwnProperty.call(CONFIG_MIN_NIGHTS, key)
+    ? CONFIG_MIN_NIGHTS[key]
     : null;
 }
 
@@ -151,7 +160,7 @@ async function enhanceBlock(root, slug) {
     const updatedLabel = formatUpdatedLabel(updated);
     renderCalendar(calendarEl, ranges);
     ensureLegend(root, updatedLabel);
-    setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel);
+    setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel, slug);
     updateNotes(noteEls);
   } catch (error) {
     console.error("Availability error", error);
@@ -530,6 +539,18 @@ function setCTADefaultState(state) {
   }
 }
 
+function calculateNightCount(startDate, endDate) {
+  if (!(startDate instanceof Date) || !(endDate instanceof Date)) return 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(12, 0, 0, 0);
+  end.setHours(12, 0, 0, 0);
+  const diffDays = Math.round(
+    (end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)
+  );
+  return Math.max(1, diffDays);
+}
+
 // Populate the CTA with the active range details.
 function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   if (!state || !startDate || !endDate) return;
@@ -539,11 +560,18 @@ function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   const labelText = propertyLabel || "your property";
   const startLabel = formatReadableDate(startDate);
   const endLabel = formatReadableDate(endDate);
+  const nights = calculateNightCount(startDate, endDate);
+  const minNights = state.minNights || 1;
   if (state.summaryEl) {
-    state.summaryEl.textContent = `Inquire for ${labelText} from ${startLabel} to ${endLabel}.`;
+    if (nights < minNights) {
+      state.summaryEl.textContent = `Minimum stay is ${minNights} night${minNights === 1 ? "" : "s"} for ${labelText}.`;
+    } else {
+      state.summaryEl.textContent = `Inquire for ${labelText} from ${startLabel} to ${endLabel}.`;
+    }
   }
+  const enableActions = nights >= minNights;
   if (state.sendBtn) {
-    state.sendBtn.disabled = false;
+    state.sendBtn.disabled = !enableActions;
   }
   if (state.cancelBtn) {
     state.cancelBtn.disabled = false;
@@ -635,10 +663,12 @@ function setupRangeSelection(
   root,
   calendarEl,
   propertyLabel,
-  updatedLabel = "recently"
+  updatedLabel = "recently",
+  slug = ""
 ) {
   if (!calendarEl) return;
   const ctaRefs = ensureAvailabilityCTA(root) || {};
+  const minNights = getMinNights(slug);
   let state = rangeSelectionStates.get(calendarEl);
   if (!state) {
     state = {
@@ -649,6 +679,7 @@ function setupRangeSelection(
       endDate: null,
       cta: ctaRefs.cta || null,
       summaryEl: ctaRefs.summaryEl || null,
+      minNights: typeof minNights === "number" ? minNights : null,
       sendBtn: ctaRefs.sendBtn || null,
       cancelBtn: ctaRefs.cancelBtn || null,
       updatedLabel: updatedLabel || "recently",
@@ -774,6 +805,8 @@ function setupRangeSelection(
   } else {
     state.cta = ctaRefs.cta || state.cta || null;
     state.summaryEl = ctaRefs.summaryEl || state.summaryEl || null;
+    state.minNights =
+      typeof minNights === "number" ? minNights : state.minNights || null;
     state.sendBtn = ctaRefs.sendBtn || state.sendBtn || null;
     state.cancelBtn = ctaRefs.cancelBtn || state.cancelBtn || null;
     state.updatedLabel = updatedLabel || state.updatedLabel || "recently";
