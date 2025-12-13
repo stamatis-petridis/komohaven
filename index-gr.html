@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="el">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>
+      Komo haven — Ενοικιαζόμενα Διαμερίσματα στην Κομοτηνή
+    </title>
+    <meta
+      name="description"
+      content="Δύο προσεγμένα διαμερίσματα στην Κομοτηνή: Blue Dream & Studio 9. Κλείστε απευθείας — χωρίς προμήθειες. Κοντά στο κέντρο και σε παραλίες Φαναρίου."
+    />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="Komo haven — Ενοικιαζόμενα στην Κομοτηνή"
+    />
+    <meta
+      property="og:description"
+      content="Δύο minimal διαμερίσματα: Blue Dream & Studio 9. Απευθείας κράτηση."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/cover.jpg" />
+    <meta property="og:url" content="index-gr.html" />
+
+    <link rel="icon" href="assets/favicon.png" />
+    <!-- hreflang pairing -->
+    <link rel="alternate" hreflang="en" href="index.html" />
+    <link rel="alternate" hreflang="el" href="index-gr.html" />
+    <link rel="alternate" hreflang="tr" href="index-tr.html" />
+    <link rel="alternate" hreflang="bg" href="index-bg.html" />
+
+    <link rel="preload" href="hero.jpg" as="image" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="config.js"></script>
+    <script defer src="script.js"></script>
+
+    <!-- JSON-LD (same business, Greek copy) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LodgingBusiness",
+        "name": "Komo haven",
+        "description": "Δύο minimal διαμερίσματα στην Κομοτηνή: Blue Dream & Studio 9. Απευθείας κράτηση.",
+        "url": "index-gr.html",
+        "image": ["properties/blue-dream/assets/1.jpeg", "properties/studio-9/assets/1.jpeg"],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Κομοτηνή",
+          "addressCountry": "GR"
+        },
+        "amenityFeature": [
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "Wi-Fi",
+            "value": true
+          },
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "Κλιματισμός",
+            "value": true
+          }
+        ],
+        "makesOffer": [
+          { "@type": "Offer", "name": "Blue Dream" },
+          { "@type": "Offer", "name": "Studio 9" }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">Komo haven</a>
+        <nav>
+          <a href="#bluedream">Blue Dream</a>
+          <a href="#studio9">Studio 9</a>
+          <a href="#location">Τοποθεσία</a>
+          <a href="properties/blue-dream/index.html#availability" class="btn">Κράτηση</a>
+          <span class="pill" style="margin-left: 12px">
+            <a href="index.html" aria-label="English">🇬🇧</a> · 🇬🇷 ·
+            <a href="index-tr.html" aria-label="Türkçe">🇹🇷</a> ·
+            <a href="index-bg.html" aria-label="Български">🇧🇬</a>
+          </span>
+        </nav>
+      </div>
+    </header>
+
+    <section id="top" class="hero">
+      <picture>
+        <img
+          src="hero.jpg"
+          alt="Ατμόσφαιρα Αιγαίου στην Κομοτηνή"
+          loading="eager"
+          style="display: block; width: 100%; height: 62vh; object-fit: cover"
+        />
+      </picture>
+      <div class="hero-text container">
+        <h1>Δύο διαμερίσματα. Μία απλή κράτηση.</h1>
+        <p>
+          Διαλέξτε <strong>Blue Dream</strong> κοντά στο κέντρο ή το
+          <strong>Studio 9</strong> στην καρδιά της Κομοτηνής.
+        </p>
+        <div class="cta">
+          <a class="btn" href="#bluedream">Δείτε το Blue Dream</a>
+          <a class="btn outline" href="#studio9">Δείτε το Studio 9</a>
+        </div>
+      </div>
+    </section>
+
+    <main class="container">
+      <!-- BLUE DREAM -->
+      <section id="bluedream" class="listing">
+        <div class="listing-head">
+          <h2>Blue Dream</h2>
+          <span class="pill">Κέντρο • 1 Υπνοδωμάτιο • 2 άτομα</span>
+        </div>
+        <div class="grid">
+          <div class="gallery">
+            <figure>
+              <img
+                src="properties/blue-dream/assets/1.jpeg"
+                alt="Blue Dream — καθιστικό"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/blue-dream/assets/2.jpeg"
+                alt="Blue Dream — υπνοδωμάτιο"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/blue-dream/assets/3.jpeg"
+                alt="Blue Dream — κουζίνα"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/blue-dream/assets/4.jpeg"
+                alt="Blue Dream — μπάνιο"
+                loading="lazy"
+              />
+            </figure>
+          </div>
+          <div class="details">
+            <p>
+              Minimal αισθητική, ήσυχος δρόμος, ~30′ από τις παραλίες Φαναρίου.
+              Ιδανική βάση για Ροδόπη & Θράκη.
+            </p>
+            <ul class="amenities">
+              <li>🚗 Ελεύθερο πάρκινγκ δρόμου</li>
+              <li>📶 Γρήγορο Wi-Fi</li>
+              <li>❄️ Κλιματισμός</li>
+              <li>🧺 Πλυντήριο/Στεγνωτήριο</li>
+              <li>🍳 Εξοπλισμένη κουζίνα</li>
+              <li>🛏 Διπλό κρεβάτι + καναπές-κρεβάτι</li>
+            </ul>
+            <div class="actions">
+              <a class="btn" href="properties/blue-dream/index.html#availability"
+                >Διαθεσιμότητα Blue Dream</a
+              >
+              <a
+                class="btn outline"
+                href="#" data-map-link="blue-dream"
+                target="_blank"
+                rel="noopener"
+                >Άνοιγμα σε Χάρτες</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STUDIO 9 -->
+      <section id="studio9" class="listing">
+        <div class="listing-head">
+          <h2>Studio 9</h2>
+          <span class="pill">Κοντά στο Κέντρο • Στούντιο • 1–2 άτομα</span>
+        </div>
+        <div class="grid">
+          <div class="gallery">
+            <figure>
+              <img
+                src="properties/studio-9/assets/1.jpeg"
+                alt="Studio 9 — κρεβάτι"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/studio-9/assets/2.jpeg"
+                alt="Studio 9 — χώρος εργασίας"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/studio-9/assets/3.jpeg"
+                alt="Studio 9 — κουζίνα"
+                loading="lazy"
+              />
+            </figure>
+            <figure>
+              <img
+                src="properties/studio-9/assets/4.jpeg"
+                alt="Studio 9 — μπάνιο"
+                loading="lazy"
+              />
+            </figure>
+          </div>
+          <div class="details">
+            <p>
+              Καθαρό, minimal, 7′ με τα πόδια από Σπαθί. Ιδανικό για solo
+              ταξιδιώτες ή ζευγάρια.
+            </p>
+            <ul class="amenities">
+              <li>🏙 Περιπατητική πρόσβαση παντού</li>
+              <li>📶 Γρήγορο Wi-Fi</li>
+              <li>❄️ Κλιματισμός</li>
+            </ul>
+            <div class="actions">
+              <a class="btn" href="properties/studio-9/index.html#availability"
+                >Διαθεσιμότητα Studio 9</a
+              >
+              <a
+                class="btn outline"
+                href="#" data-map-link="studio-9"
+                target="_blank"
+                rel="noopener"
+                >Άνοιγμα σε Χάρτες</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOCATION -->
+      <section id="location" class="location">
+        <h2>Τοποθεσία</h2>
+        <p>
+          Βάση στην Κομοτηνή (Ροδόπη). Παραλίες Φαναρίου ≈ 30 km. Πρόσβαση σε
+          Αλεξανδρούπολη & Ξάνθη.
+        </p>
+        <iframe
+          id="map"
+          src="https://www.google.com/maps?q=Komotini,+Greece&hl=el&z=14&output=embed"
+          width="100%"
+          height="350"
+          style="border-radius: 12px; margin-bottom: 1.5rem"
+          frameborder="0"
+          allowfullscreen=""
+          aria-hidden="false"
+          tabindex="0"
+        >
+        </iframe>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <small
+          >© <span id="year"></span> Komo haven • Κομοτηνή, Ελλάδα</small
+        >
+        <div class="links">
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
