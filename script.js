@@ -39,6 +39,18 @@
   };
 
   //#endregion
+  // ───────────────────────────── Rates API ─────────────────────────────
+  //#region Rates API
+
+  const getNightlyRateCents = (slug) => {
+    if (!slug) return null;
+    const key = String(slug).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(NIGHTLY_RATES_CENTS, key)
+      ? NIGHTLY_RATES_CENTS[key]
+      : null;
+  };
+
+  //#endregion
   // ───────────────────────────── Contact Links ─────────────────────────────
   //#region Contact Links
 
@@ -82,18 +94,6 @@
         el.setAttribute("rel", "noopener");
       }
     });
-  };
-
-  //#endregion
-  // ───────────────────────────── Rates API ─────────────────────────────
-  //#region Rates API
-
-  const getNightlyRateCents = (slug) => {
-    if (!slug) return null;
-    const key = String(slug).toLowerCase();
-    return Object.prototype.hasOwnProperty.call(NIGHTLY_RATES_CENTS, key)
-      ? NIGHTLY_RATES_CENTS[key]
-      : null;
   };
 
   //#endregion
@@ -164,16 +164,6 @@
   };
 
   //#endregion
-  // ───────────────────────────── Footer Year ─────────────────────────────
-  //#region Footer Year
-
-  const updateYear = () => {
-    document.querySelectorAll("#year").forEach((el) => {
-      el.textContent = String(new Date().getFullYear());
-    });
-  };
-
-  //#endregion
   // ───────────────────────────── Leaflet Map ─────────────────────────────
   //#region Leaflet Map
 
@@ -197,6 +187,16 @@
 
     L.marker(center).addTo(map).bindPopup("Blue Dream").openPopup();
     L.marker(studio).addTo(map).bindPopup("Studio 9");
+  };
+
+  //#endregion
+  // ───────────────────────────── Footer Year ─────────────────────────────
+  //#region Footer Year
+
+  const updateYear = () => {
+    document.querySelectorAll("#year").forEach((el) => {
+      el.textContent = String(new Date().getFullYear());
+    });
   };
 
   //#endregion
