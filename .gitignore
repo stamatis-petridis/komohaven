@@ -1,5 +1,6 @@
 .DS_Store
 .vscode
+
 # Availability toolkit secrets
 availability/.env
 availability/.env.*
@@ -9,3 +10,10 @@ availability/.env.*
 properties/blue-dream/assets/old/
 properties/studio-9/assets/old/
 old/
+
+# cloudflare
+.wrangler/
+.dev.vars
+
+# node modules
+node_modules/

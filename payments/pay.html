@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reserve your stay — Komo haven</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        background: var(--bg, #0b0b0c);
+        color: var(--fg, #f5f7fa);
+      }
+      .pay-wrapper {
+        max-width: 720px;
+        margin: 64px auto;
+        padding: 0 18px;
+      }
+      .pay-card {
+        background: var(--card, #121316);
+        border: 1px solid var(--line, #1d1f24);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      }
+      .pay-card h1 {
+        margin-top: 0;
+        margin-bottom: 12px;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin: 16px 0;
+      }
+      .summary-item {
+        padding: 12px;
+        border: 1px solid var(--line, #1d1f24);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .summary-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .rule {
+        margin: 12px 0 18px;
+        color: var(--muted, #a7adba);
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .muted {
+        color: var(--muted, #a7adba);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="pay-wrapper">
+      <div class="pay-card" id="pay-card">
+        <h1>Review & Pay</h1>
+        <p class="muted" id="status">Preparing your booking…</p>
+        <div id="summary" hidden>
+          <div class="summary">
+            <div class="summary-item">
+              <strong>Property</strong>
+              <span id="summary-property"></span>
+            </div>
+            <div class="summary-item">
+              <strong>Check-in</strong>
+              <span id="summary-start"></span>
+            </div>
+            <div class="summary-item">
+              <strong>Check-out</strong>
+              <span id="summary-end"></span>
+            </div>
+            <div class="summary-item">
+              <strong>Nights</strong>
+              <span id="summary-nights"></span>
+            </div>
+            <div class="summary-item">
+              <strong>Total</strong>
+              <span id="summary-total"></span>
+            </div>
+          </div>
+          <p class="rule">Dates are reserved only after payment.</p>
+          <div class="actions">
+            <button class="btn" id="pay-now">Pay now</button>
+            <a class="btn outline" id="back-link" href="/">Back to listings</a>
+          </div>
+        </div>
+        <div id="fallback" hidden>
+          <p class="muted">
+            Missing booking details. Please start a new reservation from the property page.
+          </p>
+          <div class="actions">
+            <a class="btn" href="/properties/blue-dream/index.html">Blue Dream</a>
+            <a class="btn outline" href="/properties/studio-9/index.html">Studio 9</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (() => {
+        const statusEl = document.getElementById("status");
+        const summaryEl = document.getElementById("summary");
+        const fallbackEl = document.getElementById("fallback");
+        const payBtn = document.getElementById("pay-now");
+        const propertyEl = document.getElementById("summary-property");
+        const startEl = document.getElementById("summary-start");
+        const endEl = document.getElementById("summary-end");
+        const nightsEl = document.getElementById("summary-nights");
+        const totalEl = document.getElementById("summary-total");
+        const backLink = document.getElementById("back-link");
+
+        const slugToPath = {
+          "blue-dream": "/properties/blue-dream/index.html",
+          "studio9": "/properties/studio-9/index.html",
+          "studio-9": "/properties/studio-9/index.html",
+        };
+
+        const formatDate = (value) => {
+          if (!value) return "";
+          const d = new Date(value);
+          if (Number.isNaN(d.getTime())) return "";
+          return d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+        };
+
+        const formatCurrency = (amountCents, currency) => {
+          if (typeof amountCents !== "number" || !currency) return "";
+          try {
+            return new Intl.NumberFormat(undefined, {
+              style: "currency",
+              currency,
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            }).format(amountCents / 100);
+          } catch (_err) {
+            return "";
+          }
+        };
+
+        const deriveLabel = (slug) => {
+          if (!slug) return "Your stay";
+          return slug
+            .split(/[-_]/)
+            .filter(Boolean)
+            .map((p) => p[0]?.toUpperCase() + p.slice(1))
+            .join(" ");
+        };
+
+        const parseNumber = (value) => {
+          if (value === null || value === undefined) return null;
+          const n = Number(value);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const readQueryContext = () => {
+          const params = new URLSearchParams(window.location.search);
+          if ([...params.keys()].length === 0) return null;
+          const slug = params.get("slug") || "";
+          return {
+            slug,
+            propertyLabel: params.get("propertyLabel") || deriveLabel(slug),
+            startISO: params.get("start") || "",
+            endISO: params.get("end") || "",
+            nights: parseNumber(params.get("nights")),
+            totalCents: parseNumber(params.get("totalCents")),
+            currency: params.get("currency") || "EUR",
+          };
+        };
+
+        const readStoredContext = () => {
+          try {
+            const raw = sessionStorage.getItem("komo_booking_context");
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object") return null;
+            return parsed;
+          } catch (_err) {
+            return null;
+          }
+        };
+
+        const mergeContext = (queryCtx, storedCtx) => {
+          if (!queryCtx && !storedCtx) return null;
+          const ctx = { ...(storedCtx || {}), ...(queryCtx || {}) };
+          if (!ctx.slug || !ctx.startISO || !ctx.endISO) return null;
+          ctx.nights = parseNumber(ctx.nights);
+          ctx.totalCents = parseNumber(ctx.totalCents);
+          ctx.propertyLabel = ctx.propertyLabel || deriveLabel(ctx.slug);
+          ctx.currency = ctx.currency || "EUR";
+          return ctx;
+        };
+
+        const renderSummary = (ctx) => {
+          propertyEl.textContent = ctx.propertyLabel || deriveLabel(ctx.slug);
+          startEl.textContent = formatDate(ctx.startISO);
+          endEl.textContent = formatDate(ctx.endISO);
+          nightsEl.textContent =
+            ctx.nights && ctx.nights > 0 ? `${ctx.nights}` : "—";
+          totalEl.textContent = formatCurrency(ctx.totalCents, ctx.currency) || "—";
+          const backTarget = slugToPath[ctx.slug] || "/";
+          backLink.setAttribute("href", backTarget);
+        };
+
+        const showFallback = () => {
+          statusEl.hidden = true;
+          summaryEl.hidden = true;
+          fallbackEl.hidden = false;
+          payBtn.disabled = true;
+        };
+
+        const showSummary = (ctx) => {
+          renderSummary(ctx);
+          statusEl.hidden = true;
+          summaryEl.hidden = false;
+          fallbackEl.hidden = true;
+          payBtn.disabled = false;
+          payBtn.dataset.ctx = JSON.stringify(ctx);
+        };
+
+        const init = () => {
+          const ctx = mergeContext(readQueryContext(), readStoredContext());
+          if (!ctx) {
+            showFallback();
+            return;
+          }
+          if (!ctx.nights || !ctx.totalCents || ctx.nights <= 0 || ctx.totalCents <= 0) {
+            showFallback();
+            return;
+          }
+          showSummary(ctx);
+        };
+
+        payBtn?.addEventListener("click", async () => {
+          if (!payBtn.dataset.ctx) return;
+          let ctx;
+          try {
+            ctx = JSON.parse(payBtn.dataset.ctx);
+          } catch (_err) {
+            return;
+          }
+          payBtn.disabled = true;
+          payBtn.textContent = "Redirecting…";
+          try {
+            const res = await fetch("/api/create-checkout-session", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(ctx),
+            });
+            if (!res.ok) {
+              throw new Error("Checkout failed");
+            }
+            const data = await res.json();
+            if (data && data.url) {
+              window.location.href = data.url;
+              return;
+            }
+            throw new Error("Missing checkout URL");
+          } catch (err) {
+            console.error(err);
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay now";
+            statusEl.hidden = false;
+            statusEl.textContent =
+              "Unable to start checkout right now. Please try again.";
+          }
+        });
+
+        init();
+      })();
+    </script>
+  </body>
+</html>
