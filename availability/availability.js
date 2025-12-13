@@ -150,7 +150,7 @@ async function enhanceBlock(root, slug) {
     const propertyLabel = getPropertyLabel(root, slug);
     const updatedLabel = formatUpdatedLabel(updated);
     renderCalendar(calendarEl, ranges);
-    ensureLegend(root);
+    ensureLegend(root, updatedLabel);
     setupRangeSelection(root, calendarEl, propertyLabel, updatedLabel);
     updateNotes(noteEls);
   } catch (error) {
@@ -272,12 +272,20 @@ function renderCalendar(container, ranges, { months = 3 } = {}) {
 }
 
 // Ensure a legend exists for the current block.
-function ensureLegend(root) {
+function ensureLegend(root, updatedLabel) {
   if (!root) return;
-  const existing = root.querySelector(".availability-legend");
-  if (existing) return;
-  const legend = createLegend();
-  root.appendChild(legend);
+  let legend = root.querySelector(".availability-legend");
+  if (!legend) {
+    legend = createLegend();
+    root.appendChild(legend);
+  }
+  let updated = legend.querySelector("[data-availability-updated]");
+  if (!updated) {
+    updated = document.createElement("span");
+    updated.setAttribute("data-availability-updated", "");
+    legend.appendChild(updated);
+  }
+  updated.textContent = updatedLabel ? `Updated ${updatedLabel}` : "Updated recently";
 }
 
 // Apply CSS classes to indicate booking/past/today states for a cell.
@@ -512,8 +520,7 @@ function setCTADefaultState(state) {
     state.cta.hidden = false;
   }
   if (state.summaryEl) {
-    const updatedText = state.updatedLabel || "recently";
-    state.summaryEl.textContent = `${CTA_DEFAULT_MESSAGE} Updated ${updatedText}.`;
+    state.summaryEl.textContent = CTA_DEFAULT_MESSAGE;
   }
   if (state.sendBtn) {
     state.sendBtn.disabled = true;
@@ -533,8 +540,7 @@ function setCTASelectedState(state, propertyLabel, startDate, endDate) {
   const startLabel = formatReadableDate(startDate);
   const endLabel = formatReadableDate(endDate);
   if (state.summaryEl) {
-    const updatedText = state.updatedLabel || "recently";
-    state.summaryEl.textContent = `Inquire for ${labelText} from ${startLabel} to ${endLabel}. Updated ${updatedText}.`;
+    state.summaryEl.textContent = `Inquire for ${labelText} from ${startLabel} to ${endLabel}.`;
   }
   if (state.sendBtn) {
     state.sendBtn.disabled = false;
@@ -559,7 +565,7 @@ function ensureAvailabilityCTA(root) {
     summary.className = "availability-cta-summary";
     summary.setAttribute("data-availability-summary", "");
     summary.setAttribute("aria-live", "polite");
-    summary.textContent = `${CTA_DEFAULT_MESSAGE} Updated recently.`;
+    summary.textContent = CTA_DEFAULT_MESSAGE;
     bar.appendChild(summary);
 
     const actions = document.createElement("div");
@@ -594,7 +600,7 @@ function ensureAvailabilityCTA(root) {
   if (summaryEl) {
     summaryEl.setAttribute("aria-live", "polite");
     if (!summaryEl.textContent.trim()) {
-      summaryEl.textContent = `${CTA_DEFAULT_MESSAGE} Updated recently.`;
+      summaryEl.textContent = CTA_DEFAULT_MESSAGE;
     }
   }
   if (sendBtnEl) {
