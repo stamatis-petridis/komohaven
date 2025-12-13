@@ -1,3 +1,6 @@
+// ───────────────────────────── Config ─────────────────────────────
+//#region Config
+
 (() => {
   const CONFIG = window.KOMO_CONFIG || {};
   const CONTACT = CONFIG.contact || {
@@ -23,6 +26,10 @@
 
   const NIGHTLY_RATES_CENTS = CONFIG.ratesCents || {};
 
+  //#endregion
+  // ───────────────────────────── DOM Ready ─────────────────────────────
+  //#region DOM Ready
+
   const domReady = (fn) => {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", fn, { once: true });
@@ -30,6 +37,10 @@
       fn();
     }
   };
+
+  //#endregion
+  // ───────────────────────────── Contact Links ─────────────────────────────
+  //#region Contact Links
 
   const setContactLinks = () => {
     document.querySelectorAll('[data-contact="phone"]').forEach((el) => {
@@ -73,6 +84,10 @@
     });
   };
 
+  //#endregion
+  // ───────────────────────────── Rates API ─────────────────────────────
+  //#region Rates API
+
   const getNightlyRateCents = (slug) => {
     if (!slug) return null;
     const key = String(slug).toLowerCase();
@@ -80,6 +95,10 @@
       ? NIGHTLY_RATES_CENTS[key]
       : null;
   };
+
+  //#endregion
+  // ───────────────────────────── Lightbox ─────────────────────────────
+  //#region Lightbox
 
   const initLightbox = () => {
     const galleryImages = document.querySelectorAll(".gallery img");
@@ -144,11 +163,19 @@
     });
   };
 
+  //#endregion
+  // ───────────────────────────── Footer Year ─────────────────────────────
+  //#region Footer Year
+
   const updateYear = () => {
     document.querySelectorAll("#year").forEach((el) => {
       el.textContent = String(new Date().getFullYear());
     });
   };
+
+  //#endregion
+  // ───────────────────────────── Leaflet Map ─────────────────────────────
+  //#region Leaflet Map
 
   const initLeafletMap = () => {
     if (typeof L === "undefined") return;
@@ -172,6 +199,10 @@
     L.marker(studio).addTo(map).bindPopup("Studio 9");
   };
 
+  //#endregion
+  // ───────────────────────────── Boot ─────────────────────────────
+  //#region Boot
+
   domReady(() => {
     setContactLinks();
     setMapLinks();
@@ -180,6 +211,10 @@
     initLeafletMap();
   });
 
+  //#endregion
+  // ───────────────────────────── Global Exports (window.KOMO_RATES) ─────────────────────────────
+  //#region Global Exports (window.KOMO_RATES)
+
   if (typeof window !== "undefined") {
     window.KOMO_RATES = {
       getNightlyRateCents,
@@ -187,3 +222,5 @@
     };
   }
 })();
+
+//#endregion
