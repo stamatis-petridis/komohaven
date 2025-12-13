@@ -81,7 +81,14 @@
 
     const startDate = detail.startDate ? new Date(detail.startDate) : null;
     const endDate = detail.endDate ? new Date(detail.endDate) : null;
-    const nights = calculateNights(startDate, endDate);
+    const detailNights =
+      typeof detail.nights === "number" && Number.isFinite(detail.nights)
+        ? detail.nights
+        : null;
+    const nights =
+      detailNights && detailNights > 0
+        ? detailNights
+        : calculateNights(startDate, endDate);
     const minNights =
       typeof detail.minNights === "number" ? detail.minNights : null;
 
