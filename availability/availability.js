@@ -647,6 +647,58 @@ function ensureAvailabilityCTA(root) {
 
 //#endregion
 
+// ───────────────────────────── Events (range selected/cleared)
+//#region Events
+
+function dispatchAvailabilityEvent(root, name, detail) {
+  if (!root || typeof root.dispatchEvent !== "function") return;
+  root.dispatchEvent(
+    new CustomEvent(name, {
+      detail,
+      bubbles: true,
+    })
+  );
+}
+
+function dispatchRangeSelectedEvent(
+  root,
+  slug,
+  propertyLabel,
+  startDate,
+  endDate,
+  minNights
+) {
+  if (!startDate || !endDate) return;
+  dispatchAvailabilityEvent(root, "availability:range-selected", {
+    slug,
+    propertyLabel,
+    startDate,
+    endDate,
+    startISO: formatISODate(startDate),
+    endISO: formatISODate(endDate),
+    nights: calculateNightCount(startDate, endDate),
+    minNights: typeof minNights === "number" ? minNights : null,
+    currency: CONFIG_CURRENCY,
+    rateCents: getConfiguredRate(slug),
+    summaryElement:
+      root && typeof root.querySelector === "function"
+        ? root.querySelector("[data-availability-summary]") || null
+        : null,
+  });
+}
+
+function dispatchRangeClearedEvent(root, slug) {
+  dispatchAvailabilityEvent(root, "availability:range-cleared", {
+    slug,
+    summaryElement:
+      root && typeof root.querySelector === "function"
+        ? root.querySelector("[data-availability-summary]") || null
+        : null,
+  });
+}
+
+//#endregion
+
 // ───────────────────────────── Selection & WhatsApp
 //#region Selection & WhatsApp
 
@@ -688,6 +740,7 @@ function setupRangeSelection(
 
     const hideCTA = () => {
       setCTADefaultState(state);
+      dispatchRangeClearedEvent(root, slug);
     };
 
     const showCTA = (startDate, endDate) => {
@@ -696,6 +749,14 @@ function setupRangeSelection(
         state.propertyLabel || propertyLabel || "",
         startDate,
         endDate
+      );
+      dispatchRangeSelectedEvent(
+        root,
+        slug,
+        state.propertyLabel || propertyLabel || "",
+        startDate,
+        endDate,
+        state.minNights
       );
     };
 
