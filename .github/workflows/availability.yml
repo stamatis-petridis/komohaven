@@ -1,6 +1,8 @@
 name: Update availability
 
 on:
+  push:
+    branches: [lean]          # restrict push trigger to lean only
   schedule:
     - cron: "*/30 * * * *"   # every 30 minutes; adjust as needed
   workflow_dispatch: {}       # manual trigger
