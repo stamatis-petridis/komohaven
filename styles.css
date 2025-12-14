@@ -45,6 +45,7 @@ body {
   color: var(--fg);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Arial,
     sans-serif;
+  scroll-behavior: smooth;
 }
 img {
   max-width: 100%;
