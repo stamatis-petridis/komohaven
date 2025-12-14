@@ -56,13 +56,24 @@ export async function onRequest({ request, env }) {
     "line_items[0][price_data][product_data][name]",
     `${propertyLabel} — ${startISO} to ${endISO}`
   );
-
   // Attach booking metadata to the Checkout Session.
   params.append("metadata[slug]", slug);
   params.append("metadata[propertyLabel]", propertyLabel);
   params.append("metadata[startISO]", startISO);
   params.append("metadata[endISO]", endISO);
   params.append("metadata[nights]", String(nights));
+
+  // Collect phone number in Stripe Checkout.
+  params.append("phone_number_collection[enabled]", "true");
+
+  // Collect full name explicitly without requiring a pre-existing `customer`.
+  // Stripe rejects `customer_update` unless a `customer` is provided.
+  params.append("custom_fields[0][key]", "full_name");
+  params.append("custom_fields[0][label][type]", "custom");
+  params.append("custom_fields[0][label][custom]", "Full name");
+  params.append("custom_fields[0][type]", "text");
+  params.append("custom_fields[0][optional]", "false");
+  params.append("custom_fields[0][text][maximum_length]", "80");
 
   try {
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
