@@ -14,7 +14,6 @@ old/
 # cloudflare
 .wrangler/
 .dev.vars
-wrangler.toml
 
 # node modules
 node_modules/
