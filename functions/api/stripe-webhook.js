@@ -83,6 +83,25 @@ export async function onRequest({ request, env }) {
   });
 
   try {
+    await persistBooking(env, {
+      slug: meta.slug || session.client_reference_id || propertyLabel,
+      startISO: checkIn,
+      endISO: checkOut,
+      nights,
+      amountCents,
+      currency,
+      propertyLabel,
+      customer: {
+        name: fullName,
+        email: customer.email || "",
+        phone: customer.phone || "",
+      },
+      stripe: {
+        sessionId: session.id,
+        paymentIntent: session.payment_intent || null,
+        created: session.created || null,
+      },
+    });
     await sendTelegram(botToken, chatId, message);
     await markProcessed(env, eventId);
     return jsonResponse({ delivered: true });
@@ -278,6 +297,58 @@ async function markProcessed(env, eventId) {
     return;
   }
   processedInMemory.add(eventId);
+}
+
+async function persistBooking(env, record) {
+  if (!record) return;
+  const kv = env.PAYMENTS_KV;
+  if (!kv || typeof kv.put !== "function" || typeof kv.get !== "function") {
+    console.warn("PAYMENTS_KV not configured; skipping booking persistence.");
+    return;
+  }
+  const slug = normalizeSlug(record.slug) || "unknown";
+  const start = record.startISO || "unknown";
+  const end = record.endISO || "unknown";
+  const key = `booking:${slug}:${start}:${end}`;
+  const data = {
+    slug,
+    propertyLabel: record.propertyLabel || slug,
+    startISO: start,
+    endISO: end,
+    nights: record.nights ?? null,
+    amountCents: record.amountCents ?? null,
+    currency: record.currency || "EUR",
+    customer: record.customer || {},
+    stripe: record.stripe || {},
+    createdAt: new Date().toISOString(),
+  };
+  await kv.put(key, JSON.stringify(data));
+
+  const indexKey = `bookings:${slug}`;
+  let index = [];
+  try {
+    const existing = await kv.get(indexKey);
+    if (existing) {
+      const parsed = JSON.parse(existing);
+      if (Array.isArray(parsed)) {
+        index = parsed;
+      }
+    }
+  } catch (_err) {
+    index = [];
+  }
+  if (!index.includes(key)) {
+    index.push(key);
+    await kv.put(indexKey, JSON.stringify(index));
+  }
+}
+
+function normalizeSlug(value) {
+  if (!value) return null;
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
 }
 
 function jsonResponse(body, status = 200) {
