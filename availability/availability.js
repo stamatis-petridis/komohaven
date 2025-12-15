@@ -18,6 +18,15 @@ const AVAILABILITY_ENDPOINT = new URL("./availability.json", import.meta.url).to
 let availabilityCachePromise;
 const CTA_DEFAULT_MESSAGE =
   "Select start and end dates to draft a WhatsApp message. Booked dates are marked below.";
+const USE_KV =
+  typeof window !== "undefined" &&
+  (() => {
+    try {
+      return new URLSearchParams(window.location.search).get("kv_avail") === "1";
+    } catch (_err) {
+      return false;
+    }
+  })();
 
 const GLOBAL_CONFIG =
   (typeof window !== "undefined" && window.KOMO_CONFIG) || {};
@@ -99,6 +108,44 @@ export async function fetchAvailability(slug) {
   };
 }
 
+async function fetchAvailabilityWithKV(slug) {
+  if (!USE_KV) {
+    console.info("[avail] source=file", { slug, reason: "flag_off" });
+    return fetchAvailability(slug);
+  }
+
+  try {
+    const res = await fetch(
+      `/api/availability?slug=${encodeURIComponent(slug)}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) {
+      console.info("[avail] source=file", { slug, reason: "http" });
+      return fetchAvailability(slug);
+    }
+    let body;
+    try {
+      body = await res.json();
+    } catch (_err) {
+      console.info("[avail] source=file", { slug, reason: "parse" });
+      return fetchAvailability(slug);
+    }
+    if (!body || body.ok !== true || !Array.isArray(body.booked)) {
+      console.info("[avail] source=file", { slug, reason: "shape" });
+      return fetchAvailability(slug);
+    }
+    console.info("[avail] source=kv", { slug });
+    return {
+      slug: String(slug || "").toLowerCase(),
+      updated: null,
+      booked: body.booked,
+    };
+  } catch (_err) {
+    console.info("[avail] source=file", { slug, reason: "fetch" });
+    return fetchAvailability(slug);
+  }
+}
+
 // Convert raw booked entries into sorted half-open Date ranges.
 export function normalizeRanges(booked) {
   // Convert raw entries into Date ranges and filter out malformed spans.
@@ -154,7 +201,7 @@ async function enhanceBlock(root, slug) {
 
   // Load availability data, render the calendar UI, and wire up interactions.
   try {
-    const { updated, booked } = await fetchAvailability(slug);
+    const { updated, booked } = await fetchAvailabilityWithKV(slug);
     const ranges = normalizeRanges(booked);
     const propertyLabel = getPropertyLabel(root, slug);
     const updatedLabel = formatUpdatedLabel(updated);
