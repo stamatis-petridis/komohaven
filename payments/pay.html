@@ -116,11 +116,10 @@
         const totalEl = document.getElementById("summary-total");
         const backLink = document.getElementById("back-link");
 
-        const slugToPath = {
-          "blue-dream": "/properties/blue-dream/index.html",
-          "studio9": "/properties/studio-9/index.html",
-          "studio-9": "/properties/studio-9/index.html",
-        };
+          const slugToPath = {
+            "blue-dream": "/properties/blue-dream/index.html",
+            "studio-9": "/properties/studio-9/index.html",
+          };
 
         const formatDate = (value) => {
           if (!value) return "";
@@ -165,7 +164,14 @@
         const readQueryContext = () => {
           const params = new URLSearchParams(window.location.search);
           if ([...params.keys()].length === 0) return null;
-          const slug = params.get("slug") || "";
+        const normalizeSlug = (value) => {
+          if (!value) return "";
+          const raw = String(value).trim().toLowerCase();
+          if (raw === "studio9" || raw === "studio-9") return "studio-9";
+          return raw.replace(/\s+/g, "-");
+        };
+
+        const slug = normalizeSlug(params.get("slug") || "");
           return {
             slug,
             propertyLabel: params.get("propertyLabel") || deriveLabel(slug),

@@ -412,10 +412,9 @@ async function persistBooking(env, record) {
 
 function normalizeSlug(value) {
   if (!value) return null;
-  return String(value)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-");
+  const raw = String(value).trim().toLowerCase();
+  if (raw === "studio9" || raw === "studio-9") return "studio-9";
+  return raw.replace(/\s+/g, "-");
 }
 
 function safeHost(url) {

@@ -22,10 +22,10 @@ window.KOMO_CONFIG = {
   },
   ratesCents: {
     "blue-dream": 4000,
-    studio9: 3000,
+    "studio-9": 3000,
   },
   minNights: {
     "blue-dream": 2,
-    studio9: 3,
+    "studio-9": 3,
   },
 };

@@ -35,7 +35,6 @@ export async function onRequest({ request, env }) {
   const origin = new URL(request.url).origin;
   const propertyPaths = {
     "blue-dream": "/properties/blue-dream/index.html",
-    "studio9": "/properties/studio-9/index.html",
     "studio-9": "/properties/studio-9/index.html",
   };
   const fallbackPath = "/properties/blue-dream/index.html";
@@ -117,7 +116,7 @@ function validatePayload(payload) {
   }
   const errors = [];
 
-  const slug = String(payload.slug || "").trim().toLowerCase();
+  const slug = normalizeSlug(payload.slug);
   if (!slug) errors.push("slug");
 
   const propertyLabel = String(payload.propertyLabel || "").trim();
@@ -150,7 +149,7 @@ function validatePayload(payload) {
   return {
     valid: true,
     data: {
-      slug,
+      slug: normalizeSlug(slug),
       propertyLabel,
       startISO,
       endISO,
@@ -159,6 +158,13 @@ function validatePayload(payload) {
       currency,
     },
   };
+}
+
+function normalizeSlug(value) {
+  if (!value) return "";
+  const raw = String(value).trim().toLowerCase();
+  if (raw === "studio9" || raw === "studio-9") return "studio-9";
+  return raw.replace(/\s+/g, "-");
 }
 
 function jsonResponse(body, status = 200) {

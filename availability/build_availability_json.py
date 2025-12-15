@@ -35,7 +35,10 @@ ATHENS_TZ = ZoneInfo("Europe/Athens")
 
 # Convert an ENV-style property name (BLUE_DREAM) into a URL-friendly slug.
 def slugify(value: str) -> str:
-    return value.strip().lower().replace("_", "-")
+    raw = value.strip().lower()
+    if raw == "studio9" or raw == "studio-9":
+        return "studio-9"
+    return raw.replace("_", "-")
 
 
 # Unfold RFC5545 folded iCal lines into plain lines for easier parsing.

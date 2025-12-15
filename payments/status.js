@@ -1,14 +1,15 @@
+import { normalizeSlug } from "./slug.js";
+
 (() => {
   const params = new URLSearchParams(window.location.search);
 
-  const slug = (params.get("slug") || "").toLowerCase();
+  const slug = normalizeSlug(params.get("slug") || "");
   const startISO = params.get("startISO") || "";
   const endISO = params.get("endISO") || "";
   const nights = params.get("nights") || "";
 
   const slugToPath = {
     "blue-dream": "/properties/blue-dream/index.html",
-    studio9: "/properties/studio-9/index.html",
     "studio-9": "/properties/studio-9/index.html",
   };
 
