@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment received — Komo haven</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body {
+        background: var(--bg, #0b0b0c);
+        color: var(--fg, #f5f7fa);
+      }
+      .status-wrapper {
+        max-width: 800px;
+        margin: 80px auto;
+        padding: 0 18px;
+      }
+      .status-card {
+        background: var(--card, #121316);
+        border: 1px solid var(--line, #1d1f24);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+      }
+      .status-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 10px;
+      }
+      .status-heading span {
+        font-size: 32px;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      .summary {
+        margin-top: 16px;
+        padding: 14px;
+        border: 1px solid var(--line, #1d1f24);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .summary h2 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+      .summary dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 6px 12px;
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted, #a7adba);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="status-wrapper">
+      <div class="status-card">
+        <h1 class="status-heading">
+          <span>✅</span> Payment received
+        </h1>
+        <p class="muted">We’ve received your payment and will contact you shortly.</p>
+
+        <div id="booking-summary" class="summary" hidden>
+          <h2>Booking summary</h2>
+          <dl>
+            <dt>Check-in</dt>
+            <dd id="summary-start">—</dd>
+            <dt>Check-out</dt>
+            <dd id="summary-end">—</dd>
+            <dt>Nights</dt>
+            <dd id="summary-nights">—</dd>
+          </dl>
+        </div>
+
+        <div class="actions">
+          <a class="btn" id="back-link" href="/">Back to property</a>
+          <a class="btn outline" href="/">Contact host</a>
+        </div>
+      </div>
+    </main>
+    <script src="/payments/status.js"></script>
+  </body>
+</html>

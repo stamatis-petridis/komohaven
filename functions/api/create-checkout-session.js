@@ -41,8 +41,16 @@ export async function onRequest({ request, env }) {
   const fallbackPath = "/properties/blue-dream/index.html";
   const propertyPath = propertyPaths[slug] || fallbackPath;
 
-  const successUrl = `${origin}${propertyPath}?checkout=success`;
-  const cancelUrl = `${origin}${propertyPath}?checkout=cancel`;
+  const successUrl = `${origin}/payments/success.html?slug=${encodeURIComponent(
+    slug
+  )}&startISO=${encodeURIComponent(startISO)}&endISO=${encodeURIComponent(
+    endISO
+  )}&nights=${encodeURIComponent(String(nights))}`;
+  const cancelUrl = `${origin}/payments/cancel.html?slug=${encodeURIComponent(
+    slug
+  )}&startISO=${encodeURIComponent(startISO)}&endISO=${encodeURIComponent(
+    endISO
+  )}&nights=${encodeURIComponent(String(nights))}`;
 
   const params = new URLSearchParams();
   params.append("mode", "payment");

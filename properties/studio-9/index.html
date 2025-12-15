@@ -205,5 +205,34 @@
 
     <script type="module" src="../../availability/availability.js"></script>
     <script type="module" src="../../payments/payments.js"></script>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const checkout = params.get("checkout");
+        if (!checkout) return;
+        const slug = "studio-9";
+        const target = `/payments/${checkout === "success" ? "success" : "cancel"}.html?slug=${encodeURIComponent(slug)}`;
+        const note = document.createElement("div");
+        note.style.position = "sticky";
+        note.style.top = "0";
+        note.style.zIndex = "20";
+        note.style.padding = "12px";
+        note.style.background = "rgba(18,19,22,0.95)";
+        note.style.borderBottom = "1px solid #1d1f24";
+        note.textContent = checkout === "success"
+          ? "Payment confirmed. Redirecting to your receipt..."
+          : "Payment not completed. Redirecting...";
+        const link = document.createElement("a");
+        link.href = target;
+        link.textContent = " Open status";
+        link.style.color = "#4ad1ff";
+        link.style.marginLeft = "8px";
+        note.appendChild(link);
+        document.body.insertBefore(note, document.body.firstChild);
+        setTimeout(() => {
+          window.location.href = target;
+        }, 2500);
+      })();
+    </script>
   </body>
 </html>
