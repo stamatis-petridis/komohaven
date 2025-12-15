@@ -35,7 +35,14 @@ export async function onRequest({ request, env }) {
     return jsonResponse({ ok: false, error: "parse_error" }, 500);
   }
 
-  return jsonResponse({ ok: true, slug, key, booked }, 200);
+  return jsonResponse(
+    { ok: true, slug, key, booked },
+    200,
+    {
+      "Cache-Control": "public, max-age=60",
+      Vary: "Accept-Encoding",
+    }
+  );
 }
 
 function normalizeSlug(value) {
@@ -46,9 +53,12 @@ function normalizeSlug(value) {
   return raw.replace(/\s+/g, "-");
 }
 
-function jsonResponse(body, status = 200) {
+function jsonResponse(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...extraHeaders,
+    },
   });
 }
