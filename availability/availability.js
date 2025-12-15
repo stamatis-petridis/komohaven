@@ -27,6 +27,12 @@ const USE_KV =
       return false;
     }
   })();
+if (typeof window !== "undefined") {
+  console.info("[avail] kv_flag", {
+    enabled: USE_KV,
+    url: window.location.href,
+  });
+}
 
 const GLOBAL_CONFIG =
   (typeof window !== "undefined" && window.KOMO_CONFIG) || {};
@@ -187,6 +193,7 @@ function initAvailabilityBlocks() {
  * @param {string} slug Lowercase property slug used for fetching.
  */
 async function enhanceBlock(root, slug) {
+  console.info("[avail] enhanceBlock", { slug, kv_enabled: USE_KV });
   const noteEls = root.querySelectorAll("[data-availability-note]");
   const calendarEl = root.querySelector("[data-availability-calendar]");
   if (!calendarEl) return;
