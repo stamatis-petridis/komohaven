@@ -1,0 +1,8 @@
+{
+  "skills": {
+    "komohaven": {
+      "path": "skills/komohaven.md",
+      "description": "KomoHaven development expertise - multilingual rental site with availability calendar, Stripe payments, and Cloudflare hosting"
+    }
+  }
+}

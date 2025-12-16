@@ -84,3 +84,28 @@ Requires Leaflet CSS/JS loaded in HTML. Map initializes on `div#map` or `[data-m
 - `availability/.env` contains iCal export URLs—treat as sensitive
 - GitHub Actions uses repository secrets for the same URLs
 - Never commit `.env` files or log booking URLs
+
+## Claude Code Slash Commands
+
+This project includes custom slash commands for common workflows:
+
+| Command | Purpose |
+|---------|---------|
+| `/sync-languages` | Compare and sync all four language variants |
+| `/update-availability` | Refresh availability data from iCal feeds |
+| `/update-config` | Update contact info, pricing, or map links |
+| `/add-property-image` | Add new gallery image to a property |
+| `/debug-calendar` | Troubleshoot availability calendar issues |
+| `/check-deployment` | Verify deployment status and configuration |
+
+## Claude Code Skill
+
+The `.claude/skills/komohaven.md` file contains comprehensive project knowledge including:
+- Repository structure and file purposes
+- Critical rules for language synchronization
+- Half-open interval semantics for bookings
+- CSS architecture and theming
+- Payment system flow
+- Troubleshooting guides
+
+This skill is automatically available when working in this repository.
