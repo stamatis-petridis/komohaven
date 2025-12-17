@@ -122,12 +122,17 @@ async function fetchWithTimeout(url, ms) {
         clearTimeout(t);
         continue;
       }
+      // other 4xx: do not retry
       clearTimeout(t);
       throw new Error(`HTTP ${res.status}`);
     } catch (err) {
       lastErr = err;
       clearTimeout(t);
-      // retry only on network/abort
+      // Fail immediately on non-retryable HTTP errors (4xx)
+      if (err.message.startsWith("HTTP ")) {
+        break;
+      }
+      // Retry on network/abort errors if not on last attempt
       if (attempt === backoffs.length - 1) break;
     }
   }
