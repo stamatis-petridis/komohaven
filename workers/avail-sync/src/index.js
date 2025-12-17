@@ -93,30 +93,33 @@ async function syncProperty(prop, kv, env) {
     const previousStatus = previousStatusJson ? JSON.parse(previousStatusJson) : null;
     const previousBookingHash = previousStatus?.booking_hash?.replace("sha256:", "");
 
-    if (previousBookingHash === bookingHash) {
+    const changed = previousBookingHash !== bookingHash;
+
+    if (!changed) {
       // Bookings unchanged, skip booked/last_sync writes
-      await writeStatus(kv, statusKey, true, source, "unchanged", bookingHash, feedHash);
+      await writeStatus(kv, statusKey, true, source, "unchanged", bookingHash, feedHash, false);
       console.info("sync_unchanged", { slug });
     } else {
       // Bookings changed or first sync, write booked ranges
       await kv.put(bookedKey, JSON.stringify(ranges));
       await kv.put(lastKey, new Date().toISOString());
-      await writeStatus(kv, statusKey, true, source, "ok", bookingHash, feedHash);
+      await writeStatus(kv, statusKey, true, source, "ok", bookingHash, feedHash, true);
       console.info("sync_ok", { slug, count: ranges.length });
     }
   } catch (err) {
     console.error("kv_write_error", { slug, msg: err?.message || String(err) });
-    await writeStatus(kv, statusKey, false, source, "kv_write_error", null, feedHash);
+    await writeStatus(kv, statusKey, false, source, "kv_write_error", null, feedHash, false);
     await sendTelegram(env, `❌ Availability sync failed for ${slug}: kv_write_error`);
   }
 }
 
-async function writeStatus(kv, key, ok, source, message, bookingHash = null, feedHash = null) {
+async function writeStatus(kv, key, ok, source, message, bookingHash = null, feedHash = null, changed = false) {
   const payload = {
     ok,
     ts: new Date().toISOString(),
     message,
     source,
+    changed,
   };
   if (bookingHash) {
     payload.booking_hash = `sha256:${bookingHash}`;
