@@ -78,10 +78,22 @@ async function syncProperty(prop, kv, env) {
   }
 
   try {
-    await kv.put(bookedKey, JSON.stringify(ranges));
-    await kv.put(lastKey, new Date().toISOString());
-    await writeStatus(kv, statusKey, true, source, "ok", hash);
-    console.info("sync_ok", { slug, count: ranges.length });
+    // Check if content is unchanged
+    const previousStatusJson = await kv.get(statusKey);
+    const previousStatus = previousStatusJson ? JSON.parse(previousStatusJson) : null;
+    const previousHash = previousStatus?.ical_hash?.replace("sha256:", "");
+
+    if (previousHash === hash) {
+      // Content unchanged, skip booked/last_sync writes
+      await writeStatus(kv, statusKey, true, source, "unchanged", hash);
+      console.info("sync_unchanged", { slug });
+    } else {
+      // Content changed or first sync, write booked ranges
+      await kv.put(bookedKey, JSON.stringify(ranges));
+      await kv.put(lastKey, new Date().toISOString());
+      await writeStatus(kv, statusKey, true, source, "ok", hash);
+      console.info("sync_ok", { slug, count: ranges.length });
+    }
   } catch (err) {
     console.error("kv_write_error", { slug, msg: err?.message || String(err) });
     await writeStatus(kv, statusKey, false, source, "kv_write_error");
