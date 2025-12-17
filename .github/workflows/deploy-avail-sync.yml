@@ -1,0 +1,40 @@
+name: Deploy avail-sync worker
+
+on:
+  push:
+    branches: [lean]
+    paths:
+      - "workers/avail-sync/src/**"
+      - "workers/avail-sync/wrangler.toml"
+      - ".github/workflows/deploy-avail-sync.yml"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd workers/avail-sync
+          npm install
+
+      - name: Deploy to Cloudflare
+        run: |
+          cd workers/avail-sync
+          npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Verify deployment
+        run: |
+          echo "✅ avail-sync worker deployed successfully"
+          echo "Worker URL: https://avail-sync.rodipasx.workers.dev"
