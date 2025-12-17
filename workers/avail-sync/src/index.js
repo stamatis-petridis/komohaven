@@ -1,37 +1,233 @@
-/**
- * Welcome to Cloudflare Workers!
- *
- * This is a template for a Scheduled Worker: a Worker that can run on a
- * configurable interval:
- * https://developers.cloudflare.com/workers/platform/triggers/cron-triggers/
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Run `curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"` to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+// Scheduled Worker: sync Airbnb iCal feeds into KV for availability.
+// KV schema (do not change):
+// - avail:studio-9:booked
+// - avail:blue-dream:booked
+// - avail:{slug}:last_sync
+// - avail:{slug}:sync_status
+// booked shape: [{ start: "YYYY-MM-DD", end: "YYYY-MM-DD" }] (half-open)
+// sync_status: { ok: bool, ts, message, source, ical_hash? }
 
 export default {
-	async fetch(req) {
-		const url = new URL(req.url)
-		url.pathname = "/__scheduled";
-		url.searchParams.append("cron", "* * * * *");
-		return new Response(`To test the scheduled handler, ensure you have used the "--test-scheduled" then try running "curl ${url.href}".`);
-	},
+  async fetch(req) {
+    const url = new URL(req.url);
+    url.pathname = "/__scheduled";
+    url.searchParams.append("cron", "* * * * *");
+    return new Response(
+      `To test the scheduled handler, run curl "${url.href}" after enabling --test-scheduled.`
+    );
+  },
 
-	// The scheduled handler is invoked at the interval set in our wrangler.jsonc's
-	// [[triggers]] configuration.
-	async scheduled(event, env, ctx) {
-		// A Cron Trigger can make requests to other endpoints on the Internet,
-		// publish to a Queue, query a D1 Database, and much more.
-		//
-		// We'll keep it simple and make an API call to a Cloudflare API:
-		let resp = await fetch('https://api.cloudflare.com/client/v4/ips');
-		let wasSuccessful = resp.ok ? 'success' : 'fail';
+  async scheduled(_event, env) {
+    const kv = env.AVAIL_KV;
+    if (!kv || typeof kv.put !== "function") {
+      console.error("KV binding AVAIL_KV missing");
+      return;
+    }
 
-		// You could store this result in KV, write to a D1 Database, or publish to a Queue.
-		// In this template, we'll just log the result:
-		console.log(`trigger fired at ${event.cron}: ${wasSuccessful}`);
-	},
+    const props = [
+      {
+        slug: "blue-dream",
+        url: env.BLUE_DREAM_ICAL_URL_AIRBNB,
+        source: "airbnb",
+      },
+      {
+        slug: "studio-9",
+        url: env.STUDIO_9_ICAL_URL_AIRBNB,
+        source: "airbnb",
+      },
+    ];
+
+    for (const prop of props) {
+      await syncProperty(prop, kv, env);
+    }
+  },
 };
+
+async function syncProperty(prop, kv, env) {
+  const { slug, url, source } = prop;
+  const statusKey = `avail:${slug}:sync_status`;
+  const bookedKey = `avail:${slug}:booked`;
+  const lastKey = `avail:${slug}:last_sync`;
+
+  if (!url) {
+    await writeStatus(kv, statusKey, false, source, "missing_url");
+    await sendTelegram(env, `❌ Availability sync failed for ${slug}: missing URL`);
+    return;
+  }
+
+  let icsText;
+  let hash = null;
+  try {
+    icsText = await fetchWithTimeout(url, 8000);
+    hash = await sha256Hex(icsText);
+  } catch (err) {
+    console.error("fetch_error", { slug, msg: err?.message || String(err) });
+    await writeStatus(kv, statusKey, false, source, "fetch_error");
+    await sendTelegram(env, `❌ Availability sync failed for ${slug}: fetch_error`);
+    return;
+  }
+
+  let ranges;
+  try {
+    ranges = normalizeRanges(parseICS(icsText));
+  } catch (err) {
+    console.error("parse_error", { slug, msg: err?.message || String(err) });
+    await writeStatus(kv, statusKey, false, source, "parse_error");
+    await sendTelegram(env, `❌ Availability sync failed for ${slug}: parse_error`);
+    return;
+  }
+
+  try {
+    await kv.put(bookedKey, JSON.stringify(ranges));
+    await kv.put(lastKey, new Date().toISOString());
+    await writeStatus(kv, statusKey, true, source, "ok", hash);
+    console.info("sync_ok", { slug, count: ranges.length });
+  } catch (err) {
+    console.error("kv_write_error", { slug, msg: err?.message || String(err) });
+    await writeStatus(kv, statusKey, false, source, "kv_write_error");
+    await sendTelegram(env, `❌ Availability sync failed for ${slug}: kv_write_error`);
+  }
+}
+
+async function writeStatus(kv, key, ok, source, message, icalHash = null) {
+  const payload = {
+    ok,
+    ts: new Date().toISOString(),
+    message,
+    source,
+  };
+  if (ok && icalHash) {
+    payload.ical_hash = `sha256:${icalHash}`;
+  }
+  await kv.put(key, JSON.stringify(payload));
+}
+
+async function fetchWithTimeout(url, ms) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function parseICS(text) {
+  const lines = unfold(text || "");
+  const events = [];
+  let current = {};
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line === "BEGIN:VEVENT") {
+      current = {};
+    } else if (line === "END:VEVENT") {
+      if (current && !isCancelled(current)) {
+        const start = extractDate(current, "DTSTART");
+        const end = extractDate(current, "DTEND");
+        if (start && end && end > start) {
+          events.push({ start, end });
+        }
+      }
+      current = {};
+    } else {
+      const [k, v] = line.split(":", 2);
+      if (k && v) current[k] = v;
+    }
+  }
+  return events;
+}
+
+function unfold(text) {
+  const out = [];
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    if ((line.startsWith(" ") || line.startsWith("\t")) && out.length) {
+      out[out.length - 1] += line.slice(1);
+    } else {
+      out.push(line);
+    }
+  }
+  return out;
+}
+
+function isCancelled(event) {
+  return Object.keys(event).some((k) => k.startsWith("STATUS") && event[k] === "CANCELLED");
+}
+
+function extractDate(event, key) {
+  const entryKey = Object.keys(event).find((k) => k.split(";")[0] === key);
+  if (!entryKey) return null;
+  return normalizeDate(event[entryKey]);
+}
+
+function normalizeDate(value) {
+  const v = (value || "").trim();
+  if (!v) return null;
+  if (/^\d{8}$/.test(v)) {
+    return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
+  }
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeRanges(ranges) {
+  const sorted = (ranges || [])
+    .filter((r) => r && r.start && r.end)
+    .map((r) => ({ start: r.start, end: r.end }))
+    .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
+
+  const merged = [];
+  for (const r of sorted) {
+    if (!merged.length) {
+      merged.push(r);
+      continue;
+    }
+    const last = merged[merged.length - 1];
+    if (r.start <= last.end) {
+      if (r.end > last.end) {
+        last.end = r.end;
+      }
+    } else {
+      merged.push(r);
+    }
+  }
+
+  // Deduplicate identical ranges
+  const deduped = [];
+  let prev = null;
+  for (const r of merged) {
+    if (!prev || prev.start !== r.start || prev.end !== r.end) {
+      deduped.push(r);
+      prev = r;
+    }
+  }
+
+  return deduped;
+}
+
+async function sha256Hex(text) {
+  const data = new TextEncoder().encode(text || "");
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function sendTelegram(env, text) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text }),
+    });
+  } catch (_err) {
+    // best-effort
+  }
+}
