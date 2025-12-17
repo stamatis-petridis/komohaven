@@ -72,7 +72,7 @@ async function syncProperty(prop, kv, env) {
     ranges = normalizeRanges(parseICS(icsText));
   } catch (err) {
     console.error("parse_error", { slug, msg: err?.message || String(err) });
-    await writeStatus(kv, statusKey, false, source, "parse_error");
+    await writeStatus(kv, statusKey, false, source, "parse_error", hash);
     await sendTelegram(env, `❌ Availability sync failed for ${slug}: parse_error`);
     return;
   }
@@ -96,22 +96,42 @@ async function writeStatus(kv, key, ok, source, message, icalHash = null) {
     message,
     source,
   };
-  if (ok && icalHash) {
+  if (icalHash) {
     payload.ical_hash = `sha256:${icalHash}`;
   }
   await kv.put(key, JSON.stringify(payload));
 }
 
 async function fetchWithTimeout(url, ms) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.text();
-  } finally {
-    clearTimeout(t);
+  const backoffs = [0, 250, 750];
+  let lastErr;
+  for (let attempt = 0; attempt < backoffs.length; attempt += 1) {
+    if (backoffs[attempt] > 0) {
+      await new Promise((r) => setTimeout(r, backoffs[attempt]));
+    }
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), ms);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (res.ok) {
+        clearTimeout(t);
+        return await res.text();
+      }
+      if (res.status === 429 || res.status >= 500) {
+        lastErr = new Error(`HTTP ${res.status}`);
+        clearTimeout(t);
+        continue;
+      }
+      clearTimeout(t);
+      throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastErr = err;
+      clearTimeout(t);
+      // retry only on network/abort
+      if (attempt === backoffs.length - 1) break;
+    }
   }
+  throw lastErr || new Error("fetch failed");
 }
 
 function parseICS(text) {
@@ -165,14 +185,27 @@ function extractDate(event, key) {
 function normalizeDate(value) {
   const v = (value || "").trim();
   if (!v) return null;
+  // Date-only
   if (/^\d{8}$/.test(v)) {
     return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
   }
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return null;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  // Date-time (tolerate HHMM or HHMMSS with optional Z)
+  if (/^\d{8}T\d{4}Z?$/.test(v) || /^\d{8}T\d{6}Z?$/.test(v)) {
+    return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
+  }
+  // Fallback for ISO-like strings; use UTC parts to avoid TZ shifts.
+  const parsed = new Date(v);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatUTC(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
