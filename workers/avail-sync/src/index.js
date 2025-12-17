@@ -1,11 +1,11 @@
-// Scheduled Worker: sync Airbnb iCal feeds into KV for availability.
+// Scheduled Worker: sync Airbnb + Booking iCal feeds into KV for availability.
 // KV schema (do not change):
 // - avail:studio-9:booked
 // - avail:blue-dream:booked
 // - avail:{slug}:last_sync
 // - avail:{slug}:sync_status
 // booked shape: [{ start: "YYYY-MM-DD", end: "YYYY-MM-DD" }] (half-open)
-// sync_status: { ok: bool, ts, message, source, booking_hash?, feed_hash? }
+// sync_status: { ok: bool, ts, message, source: "airbnb+booking", booking_hash?, changed, feeds: {airbnb: {...}, booking: {...}} }
 
 export default {
   async fetch(req) {
@@ -27,13 +27,17 @@ export default {
     const props = [
       {
         slug: "blue-dream",
-        url: env.BLUE_DREAM_ICAL_URL_AIRBNB,
-        source: "airbnb",
+        feeds: [
+          { source: "airbnb", url: env.BLUE_DREAM_ICAL_URL_AIRBNB },
+          { source: "booking", url: env.BLUE_DREAM_ICAL_URL_BOOKING },
+        ],
       },
       {
         slug: "studio-9",
-        url: env.STUDIO_9_ICAL_URL_AIRBNB,
-        source: "airbnb",
+        feeds: [
+          { source: "airbnb", url: env.STUDIO_9_ICAL_URL_AIRBNB },
+          { source: "booking", url: env.STUDIO_9_ICAL_URL_BOOKING },
+        ],
       },
     ];
 
@@ -44,76 +48,193 @@ export default {
 };
 
 async function syncProperty(prop, kv, env) {
-  const { slug, url, source } = prop;
+  const { slug, feeds } = prop;
   const statusKey = `avail:${slug}:sync_status`;
   const bookedKey = `avail:${slug}:booked`;
   const lastKey = `avail:${slug}:last_sync`;
 
-  if (!url) {
-    await writeStatus(kv, statusKey, false, source, "missing_url");
-    await sendTelegram(env, `❌ Availability sync failed for ${slug}: missing URL`);
+  // Track per-feed status
+  const feedsStatus = {};
+  const allRanges = [];
+  let feedHashParts = [];
+  let feedCount = 0;
+  let successCount = 0;
+
+  // Process each feed
+  for (const feed of feeds) {
+    const { source, url } = feed;
+    feedsStatus[source] = { ok: false };
+
+    if (!url) {
+      feedsStatus[source].error = "missing_url";
+      console.warn("feed_missing_url", { slug, source });
+      continue;
+    }
+
+    feedCount++;
+    let icsText;
+    let feedHash;
+
+    // Fetch with timeout
+    try {
+      icsText = await fetchWithTimeout(url, 8000);
+      feedHash = await sha256Hex(icsText);
+      feedsStatus[source].feed_hash = `sha256:${feedHash}`;
+      feedHashParts.push(`${source}\n${feedHash}`);
+    } catch (err) {
+      feedsStatus[source].error = err?.message || String(err);
+      console.error("feed_fetch_error", { slug, source, msg: feedsStatus[source].error });
+      continue;
+    }
+
+    // Parse and normalize
+    let ranges;
+    try {
+      ranges = normalizeRanges(parseICS(icsText));
+      allRanges.push(...ranges);
+      feedsStatus[source].ok = true;
+      successCount++;
+    } catch (err) {
+      feedsStatus[source].error = err?.message || String(err);
+      console.error("feed_parse_error", { slug, source, msg: feedsStatus[source].error });
+      continue;
+    }
+  }
+
+  // If no feeds succeeded, fail the property
+  if (successCount === 0) {
+    await writeStatus(
+      kv,
+      statusKey,
+      false,
+      "airbnb+booking",
+      "all_feeds_failed",
+      null,
+      false,
+      feedsStatus
+    );
+    await sendTelegram(env, `❌ Availability sync failed for ${slug}: all feeds failed`);
     return;
   }
 
-  let icsText;
-  let feedHash = null;
+  // Merge all ranges (union)
+  let mergedRanges;
   try {
-    icsText = await fetchWithTimeout(url, 8000);
-    feedHash = await sha256Hex(icsText);
+    mergedRanges = normalizeRanges(allRanges);
   } catch (err) {
-    console.error("fetch_error", { slug, msg: err?.message || String(err) });
-    await writeStatus(kv, statusKey, false, source, "fetch_error");
-    await sendTelegram(env, `❌ Availability sync failed for ${slug}: fetch_error`);
+    console.error("merge_error", { slug, msg: err?.message || String(err) });
+    await writeStatus(
+      kv,
+      statusKey,
+      false,
+      "airbnb+booking",
+      "merge_error",
+      null,
+      false,
+      feedsStatus
+    );
+    await sendTelegram(env, `❌ Availability sync failed for ${slug}: merge error`);
     return;
   }
 
-  let ranges;
-  try {
-    ranges = normalizeRanges(parseICS(icsText));
-  } catch (err) {
-    console.error("parse_error", { slug, msg: err?.message || String(err) });
-    await writeStatus(kv, statusKey, false, source, "parse_error", null, feedHash);
-    await sendTelegram(env, `❌ Availability sync failed for ${slug}: parse_error`);
-    return;
-  }
-
+  // Compute booking hash
   let bookingHash;
   try {
-    bookingHash = await sha256Hex(JSON.stringify(ranges));
+    bookingHash = await sha256Hex(JSON.stringify(mergedRanges));
   } catch (err) {
     console.error("hash_error", { slug, msg: err?.message || String(err) });
-    await writeStatus(kv, statusKey, false, source, "hash_error", null, feedHash);
+    await writeStatus(
+      kv,
+      statusKey,
+      false,
+      "airbnb+booking",
+      "hash_error",
+      null,
+      false,
+      feedsStatus
+    );
     await sendTelegram(env, `❌ Availability sync failed for ${slug}: hash_error`);
     return;
   }
 
+  // Compute combined feed hash deterministically
+  let combinedFeedHash;
   try {
-    // Check if booking content is unchanged
+    feedHashParts.sort();
+    combinedFeedHash = await sha256Hex(feedHashParts.join("\n"));
+  } catch (err) {
+    console.error("feed_hash_error", { slug, msg: err?.message || String(err) });
+    combinedFeedHash = null;
+  }
+
+  // Check if booking content is unchanged
+  try {
     const previousStatusJson = await kv.get(statusKey);
     const previousStatus = previousStatusJson ? JSON.parse(previousStatusJson) : null;
     const previousBookingHash = previousStatus?.booking_hash?.replace("sha256:", "");
 
     const changed = previousBookingHash !== bookingHash;
+    const message = successCount < feedCount ? "partial" : "ok";
 
     if (!changed) {
       // Bookings unchanged, skip booked/last_sync writes
-      await writeStatus(kv, statusKey, true, source, "unchanged", bookingHash, feedHash, false);
-      console.info("sync_unchanged", { slug });
+      await writeStatus(
+        kv,
+        statusKey,
+        true,
+        "airbnb+booking",
+        "unchanged",
+        bookingHash,
+        false,
+        feedsStatus,
+        combinedFeedHash
+      );
+      console.info("sync_unchanged", { slug, feedsSuccess: successCount, feedsTotal: feedCount });
     } else {
       // Bookings changed or first sync, write booked ranges
-      await kv.put(bookedKey, JSON.stringify(ranges));
+      await kv.put(bookedKey, JSON.stringify(mergedRanges));
       await kv.put(lastKey, new Date().toISOString());
-      await writeStatus(kv, statusKey, true, source, "ok", bookingHash, feedHash, true);
-      console.info("sync_ok", { slug, count: ranges.length });
+      await writeStatus(
+        kv,
+        statusKey,
+        true,
+        "airbnb+booking",
+        message,
+        bookingHash,
+        true,
+        feedsStatus,
+        combinedFeedHash
+      );
+      console.info("sync_ok", { slug, count: mergedRanges.length, feedsSuccess: successCount, feedsTotal: feedCount });
     }
   } catch (err) {
     console.error("kv_write_error", { slug, msg: err?.message || String(err) });
-    await writeStatus(kv, statusKey, false, source, "kv_write_error", null, feedHash, false);
+    await writeStatus(
+      kv,
+      statusKey,
+      false,
+      "airbnb+booking",
+      "kv_write_error",
+      null,
+      false,
+      feedsStatus,
+      combinedFeedHash
+    );
     await sendTelegram(env, `❌ Availability sync failed for ${slug}: kv_write_error`);
   }
 }
 
-async function writeStatus(kv, key, ok, source, message, bookingHash = null, feedHash = null, changed = false) {
+async function writeStatus(
+  kv,
+  key,
+  ok,
+  source,
+  message,
+  bookingHash = null,
+  changed = false,
+  feedsStatus = null,
+  combinedFeedHash = null
+) {
   const payload = {
     ok,
     ts: new Date().toISOString(),
@@ -124,8 +245,11 @@ async function writeStatus(kv, key, ok, source, message, bookingHash = null, fee
   if (bookingHash) {
     payload.booking_hash = `sha256:${bookingHash}`;
   }
-  if (feedHash) {
-    payload.feed_hash = `sha256:${feedHash}`;
+  if (combinedFeedHash) {
+    payload.feed_hash = `sha256:${combinedFeedHash}`;
+  }
+  if (feedsStatus && Object.keys(feedsStatus).length > 0) {
+    payload.feeds = feedsStatus;
   }
   await kv.put(key, JSON.stringify(payload));
 }

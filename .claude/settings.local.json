@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:komohaven.pages.dev)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
