@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:komohaven.pages.dev)"
+      "WebFetch(domain:komohaven.pages.dev)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
