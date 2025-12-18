@@ -2,24 +2,28 @@
 
 Verify the transition from static availability.json to KV-backed system by comparing reservations across both sources for the next 30 days.
 
-**Quick Option:** Instead of manually running this command, you can run the helper script locally without using Claude tokens:
+**Quick Option:** Run the helper script locally (no Claude tokens):
 
 ```bash
-# Default: compare 30-day window for all properties
+# DEFAULT: Compare LIVE iCals vs KV (best for verification)
 python3 availability/compare_availability.py
 
 # Single property
 python3 availability/compare_availability.py --property blue-dream
 
-# Custom lookahead window
-python3 availability/compare_availability.py --days 7
+# Custom window (e.g., 30 days)
+python3 availability/compare_availability.py --days 30
 
-# Save report to file
+# Compare static JSON instead (shows expected divergence)
+python3 availability/compare_availability.py --compare-json
+
+# Save to file
 python3 availability/compare_availability.py --save report.txt
-
-# Silent mode (no progress messages)
-python3 availability/compare_availability.py --quiet
 ```
+
+**What the script does:**
+- **Default mode**: Fetches live Airbnb + Booking feeds from .env, parses them, merges both sources, then compares against KV state. This is the **ground-truth test**—if it shows "✓ SYNC VERIFIED", the worker is working correctly.
+- **--compare-json**: Compares static JSON file (from git) vs KV. Shows expected divergence due to far-future platform quirks being omitted from the repo.
 
 See `availability/TRANSITION.md` for detailed transition guide and debugging steps.
 

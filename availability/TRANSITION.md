@@ -15,50 +15,77 @@ This directory contains tooling for the transition from the **static git-based p
 
 ### Daily Checks
 
-Run the comparison script to verify both systems agree:
+The script now has two modes:
 
+**Mode 1: Verify Worker Sync (RECOMMENDED)**
 ```bash
-# Compare 30-day booking window (default)
+# Fetches live iCals, merges both feeds, compares against KV
 python3 availability/compare_availability.py
 
-# Compare specific property
+# This is the ground-truth test. If status is "✓ SYNC VERIFIED",
+# the worker is correctly merging Airbnb + Booking bookings.
+```
+
+**Mode 2: Compare Static JSON (legacy)**
+```bash
+# Compares git-committed availability.json vs KV
+python3 availability/compare_availability.py --compare-json
+
+# Expected result: ⚠ SYNC DIVERGENCE
+# (far-future blocks in KV but omitted from git—intentional)
+```
+
+**Additional options (work with both modes):**
+```bash
+# Single property
 python3 availability/compare_availability.py --property blue-dream
 
-# Compare shorter window
-python3 availability/compare_availability.py --days 7
+# Custom window (default is 210 days)
+python3 availability/compare_availability.py --days 30
 
 # Save report to file
 python3 availability/compare_availability.py --save report_2025-12-18.txt
 
-# Run silently, just output report
+# Suppress progress messages
 python3 availability/compare_availability.py --quiet
 ```
 
-### What the Script Does
+### What the Script Does (Mode 1: Default)
 
-1. **Fetches Live KV Data** — Queries the deployed API for current KV state
-2. **Loads Static File** — Reads `availability.json` (last auto-update from GitHub Actions)
-3. **Compares 30-Day Window** — Checks if next 30 days of bookings match between KV and static file
-4. **Reports Status** — Flags any divergence or confirms transition readiness
+1. **Discovers iCal URLs** — Reads `.env` for Airbnb + Booking feed URLs
+2. **Fetches Live Feeds** — Downloads current bookings from both platforms
+3. **Parses & Merges** — Parses iCal events, merges overlapping ranges
+4. **Fetches KV State** — Gets current bookings from deployed KV storage
+5. **Compares 210-Day Window** — Verifies merged iCals match KV state
+6. **Reports Status** — "✓ SYNC VERIFIED" if worker synced correctly
 
 ### Expected Output
 
-**Good ✓:**
+**Mode 1: Default (Live iCals) — Good ✓:**
 ```
-STATUS: ✓ TRANSITION READY
-  Critical booking window matches on all properties.
-  Far-future divergence is intentional (platform quirks).
-  KV system is safe to use as primary source.
+STATUS: ✓ SYNC VERIFIED
+  Worker correctly synced live icals (airbnb + booking) feeds.
+  All bookings match between source and KV storage.
 ```
+→ Means: Worker is syncing both iCal feeds correctly into KV.
 
-**Warning ⚠:**
+**Mode 1: Default (Live iCals) — Warning ⚠:**
 ```
-STATUS: ⚠ DIVERGENCE DETECTED
-  Mismatch in critical booking window. Investigate:
-  1. Has the worker synced since static file was updated?
-  2. Check worker logs: npx wrangler tail avail-sync
-  3. Verify KV connectivity: curl komohaven.pages.dev/api/avail-health
+STATUS: ⚠ SYNC DIVERGENCE
+  Mismatch between source and KV. Investigate:
+  1. Check worker logs: npx wrangler tail avail-sync
+  2. Verify feed URLs are correct in Cloudflare secrets
+  3. Test KV connectivity: curl komohaven.pages.dev/api/avail-health
 ```
+→ Means: Worker didn't sync feeds correctly. Debug immediately.
+
+**Mode 2: --compare-json — Expected:**
+```
+STATUS: ⚠ SYNC DIVERGENCE
+  Mismatch between source and KV.
+  (far-future blocks in KV but omitted from git—intentional)
+```
+→ Means: Static JSON is stale. This is expected and OK. Use Mode 1 instead.
 
 ## Timeline
 
