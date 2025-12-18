@@ -2,6 +2,27 @@
 
 Verify the transition from static availability.json to KV-backed system by comparing reservations across both sources for the next 30 days.
 
+**Quick Option:** Instead of manually running this command, you can run the helper script locally without using Claude tokens:
+
+```bash
+# Default: compare 30-day window for all properties
+python3 availability/compare_availability.py
+
+# Single property
+python3 availability/compare_availability.py --property blue-dream
+
+# Custom lookahead window
+python3 availability/compare_availability.py --days 7
+
+# Save report to file
+python3 availability/compare_availability.py --save report.txt
+
+# Silent mode (no progress messages)
+python3 availability/compare_availability.py --quiet
+```
+
+See `availability/TRANSITION.md` for detailed transition guide and debugging steps.
+
 ## Your Task
 
 1. **Fetch KV Data**
