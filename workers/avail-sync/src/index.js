@@ -8,12 +8,51 @@
 // sync_status: { ok: bool, ts, message, source: "airbnb+booking", booking_hash?, changed, feeds: {airbnb: {...}, booking: {...}} }
 
 export default {
-  async fetch(req) {
+  async fetch(req, env) {
     const url = new URL(req.url);
+
+    // Manual sync endpoint: GET /sync or POST /sync
+    if ((req.method === "GET" || req.method === "POST") && url.pathname === "/sync") {
+      const kv = env.AVAIL_KV;
+      if (!kv || typeof kv.put !== "function") {
+        return jsonResponse({ ok: false, error: "KV binding AVAIL_KV missing" }, 500);
+      }
+
+      const props = [
+        {
+          slug: "blue-dream",
+          feeds: [
+            { source: "airbnb", url: env.BLUE_DREAM_ICAL_URL_AIRBNB },
+            { source: "booking", url: env.BLUE_DREAM_ICAL_URL_BOOKING },
+          ],
+        },
+        {
+          slug: "studio-9",
+          feeds: [
+            { source: "airbnb", url: env.STUDIO_9_ICAL_URL_AIRBNB },
+            { source: "booking", url: env.STUDIO_9_ICAL_URL_BOOKING },
+          ],
+        },
+      ];
+
+      const results = {};
+      for (const prop of props) {
+        try {
+          await syncProperty(prop, kv, env);
+          results[prop.slug] = { ok: true };
+        } catch (err) {
+          results[prop.slug] = { ok: false, error: err?.message || String(err) };
+        }
+      }
+
+      return jsonResponse({ ok: true, synced: results });
+    }
+
+    // Default: show help message
     url.pathname = "/__scheduled";
     url.searchParams.append("cron", "* * * * *");
     return new Response(
-      `To test the scheduled handler, run curl "${url.href}" after enabling --test-scheduled.`
+      `Availability sync worker.\n\nEndpoints:\n- GET /sync — Manually trigger sync for all properties\n- POST /sync — Same as GET\n\nScheduled sync runs every 15 minutes (*/15 * * * *).\n`
     );
   },
 
@@ -379,7 +418,7 @@ function normalizeRanges(ranges) {
       continue;
     }
     const last = merged[merged.length - 1];
-    if (r.start <= last.end) {
+    if (r.start < last.end) {
       if (r.end > last.end) {
         last.end = r.end;
       }
@@ -420,4 +459,11 @@ async function sendTelegram(env, text) {
   } catch (_err) {
     // best-effort
   }
+}
+
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
 }

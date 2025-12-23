@@ -18,3 +18,4 @@ old/
 # node modules
 node_modules/
 empty.json
+availability/__pycache__/
