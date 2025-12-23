@@ -89,21 +89,89 @@ STATUS: ⚠ SYNC DIVERGENCE
 
 ## Timeline
 
-**Phase 1: Parallel Operation (Now)**
+**Phase 1: Parallel Operation (2025-12-18 → TBD)**
 - Both systems running independently
 - KV worker syncs every 15 minutes (*/15 * * * *)
 - Static pipeline runs every 30 minutes (GitHub Actions)
 - Use `compare_availability.py` daily to verify alignment
+- **Target:** 7-10 days minimum to build confidence
 
-**Phase 2: Frontend Switchover (24–48 hours)**
+**Phase 2: Frontend Switchover (TBD → TBD + 24–48 hours)**
 - Frontend fully uses `?kv_avail=1` (KV-backed system)
 - Verify no user-facing issues
 - Keep static file in place as fallback
 
-**Phase 3: Retire Static Pipeline (48–72 hours)**
+**Phase 3: Retire Static Pipeline (TBD + 48–72 hours)**
 - Disable `availability.yml` GitHub Actions workflow
 - Archive the static pipeline helpers
 - Keep `availability.json` in git as reference (read-only)
+
+## Confidence Metrics & Readiness Criteria
+
+**Phase 1 started:** 2025-12-18 (commit b3e00cb0)  
+**Current date:** 2025-12-23 (5 days in)  
+**Minimum Phase 1 duration:** 7-10 days (to catch weekly patterns)
+
+### Success Criteria for Phase 2 Switchover
+
+Track these metrics daily via `python3 availability/compare_availability.py`:
+
+1. **Consistency (Target: 100% for 7+ consecutive days)**
+   - ✓ SYNC VERIFIED status for all properties
+   - No SYNC DIVERGENCE errors
+   - Booking counts match exactly between live iCals and KV
+
+2. **Data Quality**
+   - All edge cases handled correctly (consecutive dates, overlaps, cancellations)
+   - No bookings lost or duplicated
+   - Worker hash (`booking_hash`) changes only when feeds actually change
+
+3. **Worker Health**
+   - All scheduled syncs complete successfully
+   - Feed fetch success rate ≥ 99% (Airbnb + Booking)
+   - No KV write errors
+   - No worker execution timeout errors
+
+4. **Manual Testing**
+   - Manual `/sync` endpoint triggers cleanly
+   - Data recovers correctly after KV deletion (if tested)
+   - No timing issues between feeds
+
+### Monitoring Command
+
+```bash
+# Run daily (best: same time each day to catch patterns)
+python3 availability/compare_availability.py
+
+# Log to file for tracking
+python3 availability/compare_availability.py --save metrics_$(date +%Y-%m-%d).txt
+
+# Watch for divergence
+watch -n 900 'python3 availability/compare_availability.py --quiet'
+```
+
+### Expected Timeline
+
+| Date Range | Milestone | Confidence |
+|---|---|---|
+| 2025-12-18 → 2025-12-20 | Early validation | 🟡 Low (edge cases unknown) |
+| 2025-12-21 → 2025-12-25 | Weekend patterns | 🟡 Medium (holiday period skews data) |
+| 2025-12-26 → 2025-12-31 | Post-holiday stability | 🟢 High |
+| 2026-01-01+ | Production-ready | 🟢 High (1-2 week running time) |
+
+### Decision Gates
+
+**Can proceed to Phase 2 if:**
+- ✓ 7-10 consecutive days with SYNC VERIFIED status
+- ✓ All success criteria met consistently
+- ✓ No trending error rates (0 regressions)
+- ✓ Manual tests pass (recovery, edge cases)
+
+**If divergence detected:**
+- Investigate immediately with worker logs
+- Document root cause in this file
+- Fix and re-deploy worker
+- Reset Phase 1 countdown (7-10 days from fix)
 
 ## Debugging
 
@@ -155,9 +223,35 @@ This is **expected and intentional** during transition:
 - `add_icals.sh` — Upload iCal URLs to Cloudflare secrets
 - `verify_icals.sh` — List iCal URLs from Cloudflare
 
+## Incidents & Fixes
+
+### 2025-12-23: Half-Open Interval Merging Bug
+
+**Issue:** Comparison script showed ⚠ SYNC DIVERGENCE for studio-9:
+- Live iCals: 5 bookings
+- KV State: 4 bookings
+- Root cause: Consecutive bookings were being incorrectly merged
+
+**Example:**
+- Booking A: `2025-12-23 → 2025-12-24` (available from Dec 24)
+- Booking B: `2025-12-24 → 2025-12-29` (booked Dec 24-28)
+- Were merged into: `2025-12-23 → 2025-12-29` (incorrect)
+
+**Root Cause:** `normalizeRanges()` function in `workers/avail-sync/src/index.js` used `r.start <= last.end` instead of `r.start < last.end`. With half-open intervals, when `start` equals previous `end`, they should not merge.
+
+**Fix:**
+1. Changed line 421 in `index.js`: `if (r.start <= last.end)` → `if (r.start < last.end)`
+2. Added manual `/sync` endpoint (GET/POST) for testing/recovery without waiting 15 minutes
+3. Deployed worker, triggered manual sync, verified with comparison script
+
+**Verification:** All properties now show ✓ SYNC VERIFIED
+
+**Lesson:** Half-open intervals (where `end` is exclusive) require strict `<` not `<=` when checking for overlap.
+
 ## Notes
 
 - The comparison script requires internet access to fetch live KV data
 - Worker runs in production (`lean` branch); manual testing uses deployment API
 - Far-future date divergence is normal and intentional (platform quirks, not booking changes)
 - Safe to run comparison script multiple times—no side effects
+- Manual sync endpoint available at `https://avail-sync.rodipasx.workers.dev/sync` (GET/POST)
