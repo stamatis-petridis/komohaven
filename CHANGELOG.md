@@ -7,8 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### In Progress
-- Phase 2.5: Extend `/api/availability` to return `last_sync` and `status` metadata
 - Phase 3: Retire static pipeline (disable GitHub Actions cron, keep file as reference)
+
+---
+
+## [Phase 2.5] - 2025-12-28 - Real Timestamps in Availability Footer
+
+### Added
+- **Extended API response**: `/api/availability` now returns `last_sync` timestamp from KV
+- **Relative time display**: Footer shows "Updated 3 mins ago" instead of "Updated recently"
+- **Smart time formatting**:
+  - < 60 seconds: "just now"
+  - < 60 minutes: "X mins ago"
+  - < 24 hours: "X hours ago"
+  - < 7 days: "X days ago"
+  - Older: date format (Dec 28, 2025)
+
+### Changed
+- `fetchAvailabilityWithKV()` now extracts `last_sync` from KV API response
+- `formatUpdatedLabel()` replaced with relative time logic
+- No breaking changes; seamless for static file fallback
+
+### Verified
+- ✅ API endpoint fetches `last_sync` from KV efficiently (Promise.all)
+- ✅ Frontend receives and displays real timestamps
+- ✅ Legacy fallback (static file) continues to work
+- ✅ Time display updates relative to current moment
 
 ---
 

@@ -143,7 +143,7 @@ async function fetchAvailabilityWithKV(slug) {
     console.info("[avail] source=kv", { slug });
     return {
       slug: String(slug || "").toLowerCase(),
-      updated: null,
+      updated: body.last_sync || null,  // use last_sync from KV response
       booked: body.booked,
     };
   } catch (_err) {
@@ -445,6 +445,21 @@ function formatUpdatedLabel(updated) {
   if (!updated) return "recently";
   const date = new Date(updated);
   if (Number.isNaN(date.getTime())) return "recently";
+  
+  // Show relative time ("3 min ago", "2 hours ago", etc.)
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffSecs < 60) return "just now";
+  if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? "" : "s"} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  
+  // Fall back to date format for older timestamps
   return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",

@@ -18,11 +18,20 @@ export async function onRequest({ request, env }) {
   }
 
   const key = `avail:${slug}:booked`;
+  const lastSyncKey = `avail:${slug}:last_sync`;
   let bookedRaw = "[]";
+  let lastSyncRaw = null;
+
   try {
-    const stored = await kv.get(key);
-    if (stored) {
-      bookedRaw = stored;
+    const [bookedData, lastSyncData] = await Promise.all([
+      kv.get(key),
+      kv.get(lastSyncKey),
+    ]);
+    if (bookedData) {
+      bookedRaw = bookedData;
+    }
+    if (lastSyncData) {
+      lastSyncRaw = lastSyncData;
     }
   } catch (_err) {
     return jsonResponse({ ok: false, error: "kv_read_failed" }, 500);
@@ -35,14 +44,17 @@ export async function onRequest({ request, env }) {
     return jsonResponse({ ok: false, error: "parse_error" }, 500);
   }
 
-  return jsonResponse(
-    { ok: true, slug, key, booked },
-    200,
-    {
-      "Cache-Control": "public, max-age=60",
-      Vary: "Accept-Encoding",
-    }
-  );
+  const responseBody = { ok: true, slug, key, booked };
+
+  // Include last_sync timestamp if available (ISO string)
+  if (lastSyncRaw) {
+    responseBody.last_sync = lastSyncRaw;
+  }
+
+  return jsonResponse(responseBody, 200, {
+    "Cache-Control": "public, max-age=60",
+    Vary: "Accept-Encoding",
+  });
 }
 
 function normalizeSlug(value) {
