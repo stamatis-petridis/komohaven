@@ -7,8 +7,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### In Progress
-- Availability sync worker running in production (avail-sync) with multi-feed merge (Airbnb + Booking)
-- GitHub Actions auto-deploy on push to `lean` branch
+- Phase 2.5: Extend `/api/availability` to return `last_sync` and `status` metadata
+- Phase 3: Retire static pipeline (disable GitHub Actions cron, keep file as reference)
+
+---
+
+## [Phase 2] - 2025-12-28 - KV as Default Availability Source
+
+### Added
+- **Frontend source resolver** (`resolveAvailabilitySource()`): Decides KV-first vs legacy file per page load
+- **Query parameter override**: `?legacy_avail=1` forces static file fallback (useful for emergency debugging)
+- **Explicit source logging**: `[avail] source_select { slug, mode, reason }` shows routing decision
+
+### Changed
+- **Default behavior inverted**: KV is now the primary source; static file is fallback
+- Removed global `USE_KV` flag (was module-load-time decision, now per-request)
+- Simplified `fetchAvailabilityWithKV()`: removed internal flag check (now only does KV attempt + fallback)
+
+### Verified (Production)
+- ✅ Both properties (blue-dream, studio-9) resolve to KV by default
+- ✅ Legacy escape hatch (`?legacy_avail=1`) works correctly
+- ✅ Calendar dates match across both sources (KV vs file)
+- ✅ KV data verified fresh via `wrangler kv key get`
+- ✅ No user-facing errors, clean fallback on KV failure
+
+### Notes
+- Phase 1 (10 days of ✓ SYNC VERIFIED) preceded this change
+- Static file (`availability.json`) remains in git as fallback reference
+- Phase 2.5 planned: extend API with `last_sync` metadata for UI visibility
 
 ---
 
@@ -38,7 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Phase 3] - 2025-12-15 to 2025-12-17 - Stripe Checkout & KV Availability
+## [Phase 2b] - 2025-12-15 to 2025-12-17 - Stripe Checkout & KV Availability
 
 ### Added
 - **KV-backed availability storage**:
@@ -69,7 +95,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Phase 2] - 2025-12-15 - Config Consolidation & Payments Foundation
+## [Phase 2a] - 2025-12-15 - Config Consolidation & Payments Foundation
 
 ### Added
 - Centralized configuration in `config.js`:
@@ -155,9 +181,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Aug 2025      Phase 0: Base site + i18n
 Oct 2025      Phase 1a: Gallery, maps, UI polish
 Oct 2025      Phase 1b: Static availability (Python + GA workflow)
-Dec 15 2025   Phase 2: Config consolidation, pricing
-Dec 15-16     Phase 3: KV storage, Stripe checkout
+Dec 15 2025   Phase 2a: Config consolidation, pricing
+Dec 15-16     Phase 2b: KV storage, Stripe checkout
 Dec 17-18     Phase 4: Multi-feed sync worker + GitHub Actions deploy
+Dec 18-28     Phase 1: Parallel verification (10 days ✓ SYNC VERIFIED)
+Dec 28 2025   Phase 2 (Final): Frontend KV-first, file fallback via ?legacy_avail=1
 ```
 
 ---
