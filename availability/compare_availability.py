@@ -278,7 +278,7 @@ def format_report(results: list, days: int, source_name: str) -> str:
 
     report = []
     report.append("=" * 80)
-    report.append("AVAILABILITY TRANSITION MONITOR")
+    report.append(f"AVAILABILITY TRANSITION MONITOR - Timestamp: {datetime.now().isoformat()}")
     report.append("=" * 80)
     report.append(f"\nToday: {today}")
     report.append(f"Window: {today} → {cutoff} ({days} days)")
@@ -339,7 +339,7 @@ def format_report(results: list, days: int, source_name: str) -> str:
         report.append("  2. Verify feed URLs are correct in Cloudflare secrets")
         report.append("  3. Test KV connectivity: curl komohaven.pages.dev/api/avail-health")
 
-    report.append(f"\n{'=' * 80}\n")
+    report.append(f"\n{'=' * 80}\nTHE END - Timestamp: {datetime.now().isoformat()}\n{'=' * 80}\n")
 
     return "\n".join(report)
 
