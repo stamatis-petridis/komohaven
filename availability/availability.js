@@ -18,21 +18,6 @@ const AVAILABILITY_ENDPOINT = new URL("./availability.json", import.meta.url).to
 let availabilityCachePromise;
 const CTA_DEFAULT_MESSAGE =
   "Select start and end dates to draft a WhatsApp message. Booked dates are marked below.";
-const USE_KV =
-  typeof window !== "undefined" &&
-  (() => {
-    try {
-      return new URLSearchParams(window.location.search).get("kv_avail") === "1";
-    } catch (_err) {
-      return false;
-    }
-  })();
-if (typeof window !== "undefined") {
-  console.info("[avail] kv_flag", {
-    enabled: USE_KV,
-    url: window.location.href,
-  });
-}
 
 const GLOBAL_CONFIG =
   (typeof window !== "undefined" && window.KOMO_CONFIG) || {};
@@ -40,6 +25,26 @@ const CONFIG_RATES = GLOBAL_CONFIG.ratesCents || {};
 const CONFIG_CURRENCY = GLOBAL_CONFIG.currency || "EUR";
 const CONFIG_MIN_NIGHTS = GLOBAL_CONFIG.minNights || {};
 
+/**
+ * Decide if we should use KV or legacy file availability.
+ * Evaluated at runtime (per page load).
+ */
+function resolveAvailabilitySource() {
+  if (typeof window === "undefined") {
+    return { mode: "kv", reason: "default_kv" };
+  }
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("legacy_avail") === "1") {
+      return { mode: "file", reason: "legacy_param" };
+    }
+  } catch (_err) {
+    // If URL parsing fails, fall through to KV
+  }
+
+  return { mode: "kv", reason: "default_kv" };
+}
 function getConfiguredRate(slug) {
   if (!slug) return null;
   const key = String(slug).toLowerCase();
@@ -115,11 +120,6 @@ export async function fetchAvailability(slug) {
 }
 
 async function fetchAvailabilityWithKV(slug) {
-  if (!USE_KV) {
-    console.info("[avail] source=file", { slug, reason: "flag_off" });
-    return fetchAvailability(slug);
-  }
-
   try {
     const res = await fetch(
       `/api/availability?slug=${encodeURIComponent(slug)}`,
@@ -193,7 +193,7 @@ function initAvailabilityBlocks() {
  * @param {string} slug Lowercase property slug used for fetching.
  */
 async function enhanceBlock(root, slug) {
-  console.info("[avail] enhanceBlock", { slug, kv_enabled: USE_KV });
+  console.info("[avail] enhanceBlock", { slug });
   const noteEls = root.querySelectorAll("[data-availability-note]");
   const calendarEl = root.querySelector("[data-availability-calendar]");
   if (!calendarEl) return;
@@ -208,7 +208,15 @@ async function enhanceBlock(root, slug) {
 
   // Load availability data, render the calendar UI, and wire up interactions.
   try {
-    const { updated, booked } = await fetchAvailabilityWithKV(slug);
+    const { mode, reason } = resolveAvailabilitySource();
+    console.info("[avail] source_select", { slug, mode, reason });
+    let result;
+    if (mode === "file") {
+      result = await fetchAvailability(slug);
+    } else {
+      result = await fetchAvailabilityWithKV(slug);
+    }
+    const { updated, booked } = result;
     const ranges = normalizeRanges(booked);
     const propertyLabel = getPropertyLabel(root, slug);
     const updatedLabel = formatUpdatedLabel(updated);
