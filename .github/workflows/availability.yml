@@ -3,12 +3,17 @@ name: Update availability
 on:
   push:
     branches: [lean]          # restrict push trigger to lean only
-  schedule:
-    - cron: "*/30 * * * *"   # every 30 minutes; adjust as needed
-  workflow_dispatch: {}       # manual trigger
+  # schedule:
+  #   - cron: "*/30 * * * *"   # DISABLED 2025-12-28: KV worker now primary (syncs every 15 min)
+  workflow_dispatch: {}       # manual trigger (for testing only)
 
 permissions:
   contents: write   # allows commit back to repo
+
+# DEPRECATED: This workflow is kept for reference/testing only.
+# Primary availability source is now KV-backed Cloudflare Worker (avail-sync),
+# which syncs every 15 minutes and has been verified stable for 10+ days.
+# Use workflow_dispatch to manually test/rebuild static file if needed.
 
 jobs:
   build-and-commit:
