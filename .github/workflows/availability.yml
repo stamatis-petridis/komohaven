@@ -1,8 +1,8 @@
 name: Update availability
 
 on:
-  push:
-    branches: [lean]          # restrict push trigger to lean only
+  # push:
+  #   branches: [lean]          # DISABLED: avoid loop with KV worker sync
   # schedule:
   #   - cron: "*/30 * * * *"   # DISABLED 2025-12-28: KV worker now primary (syncs every 15 min)
   workflow_dispatch: {}       # manual trigger (for testing only)
