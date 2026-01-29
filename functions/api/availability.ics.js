@@ -112,39 +112,41 @@ function normalizeSlug(value) {
 }
 
 function parseICS(text) {
-  // First unfold the lines (handle RFC 5545 line folding)
   const lines = unfold(text || "");
   const events = [];
   let current = {};
   
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed === "BEGIN:VEVENT") {
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line === "BEGIN:VEVENT") {
       current = {};
-    } else if (trimmed === "END:VEVENT") {
+    } else if (line === "END:VEVENT") {
       if (current && !isCancelled(current)) {
         const start = extractDate(current, "DTSTART");
         const end = extractDate(current, "DTEND");
         if (start && end && end > start) {
           const event = { start, end };
           
-          // Extract metadata from DESCRIPTION (after unfolding)
+          // Extract metadata from DESCRIPTION
           const description = current.DESCRIPTION || "";
           
-          // Extract reservation ID (e.g., HMHKN8Q5AF)
-          const reservationMatch = description.match(/details\/([A-Z0-9]+)/);
+          // Handle literal \n and fold continuation
+          const cleanDesc = description.replace(/\\n/g, "\n");
+          
+          // Extract reservation ID
+          const reservationMatch = cleanDesc.match(/details\/([A-Z0-9]+)/);
           if (reservationMatch) {
             event.reservation_id = reservationMatch[1];
           }
           
-          // Extract phone (Last 4 Digits: 0528)
-          const phoneMatch = description.match(/Phone[^:]*:\s*(.+?)(?:\n|$)/);
+          // Extract phone (handle various formats)
+          const phoneMatch = cleanDesc.match(/Phone[^:]*:\s*(.+?)(?:\n|$)/i);
           if (phoneMatch) {
             event.phone = phoneMatch[1].trim();
           }
           
-          // Extract full URL
-          const urlMatch = description.match(/(https:\/\/[^\s\n]+)/);
+          // Extract reservation URL
+          const urlMatch = cleanDesc.match(/(https:\/\/[^\s\n\\]+)/);
           if (urlMatch) {
             event.reservation_url = urlMatch[1];
           }
@@ -153,25 +155,19 @@ function parseICS(text) {
         }
       }
       current = {};
-    } else if (trimmed.length > 0) {
-      // Parse key:value (handle folded lines already combined)
-      const [k, ...vParts] = trimmed.split(":");
-      if (k && vParts.length > 0) {
-        const v = vParts.join(":");
-        current[k.trim()] = v.trim();
-      }
+    } else {
+      const [k, v] = line.split(":", 2);
+      if (k && v) current[k] = v;
     }
   }
   return events;
 }
 
 function unfold(text) {
-  // RFC 5545: Unfold lines by joining lines that start with space/tab
   const out = [];
   const lines = text.split(/\r?\n/);
   for (const line of lines) {
-    if ((line.startsWith(" ") || line.startsWith("\t")) && out.length > 0) {
-      // Continuation line - append to previous (remove leading whitespace)
+    if ((line.startsWith(" ") || line.startsWith("\t")) && out.length) {
       out[out.length - 1] += line.slice(1);
     } else {
       out.push(line);
