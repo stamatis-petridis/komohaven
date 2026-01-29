@@ -20,6 +20,30 @@ function getDashboard() {
   <title>KomoHaven Admin - Dashboard</title>
   <link rel="stylesheet" href="/admin.css">
   <style>
+    .calendar-range-selector {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--admin-card);
+      border-radius: 6px;
+      border: 1px solid var(--admin-border);
+    }
+
+    .calendar-range-selector label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .calendar-range-selector input[type="radio"] {
+      cursor: pointer;
+      accent-color: var(--admin-brand);
+    }
+
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -254,6 +278,11 @@ function getDashboard() {
 
     <div class="card">
       <h2>Availability Calendar</h2>
+      <div class="calendar-range-selector">
+        <label><input type="radio" name="calendar-months" value="3" checked> 3 months</label>
+        <label><input type="radio" name="calendar-months" value="6"> 6 months</label>
+        <label><input type="radio" name="calendar-months" value="12"> 12 months</label>
+      </div>
       <div id="calendar-container" class="loading">Loading calendar...</div>
       
       <div class="legend">
@@ -299,6 +328,22 @@ function getDashboard() {
     let currentProperty = 'blue-dream';
     let calendarData = { booked: [], blocked: [] };
     let selectedRange = { start: null, end: null };
+    let calendarMonths = parseInt(localStorage.getItem('admin_calendar_months') || '3', 10);
+
+    function getCalendarMonths() {
+      const checked = document.querySelector('input[name="calendar-months"]:checked');
+      return checked ? parseInt(checked.value, 10) : 3;
+    }
+
+    function setCalendarMonths(months) {
+      calendarMonths = months;
+      localStorage.setItem('admin_calendar_months', String(months));
+      selectedRange = { start: null, end: null };
+      clearRangeHighlight();
+      updateButtons();
+      updateStatus();
+      loadCalendar();
+    }
 
     async function selectProperty(slug) {
       currentProperty = slug;
@@ -350,7 +395,7 @@ function getDashboard() {
         };
 
         console.log('[calendar] combined calendar data:', calendarData);
-        renderCalendar(container);
+        renderCalendar(container, { months: calendarMonths });
         hideError();
       } catch (err) {
         console.error('[calendar] Failed to load calendar:', err);
@@ -695,6 +740,20 @@ function getDashboard() {
     }
 
     checkAuth();
+    
+    // Set initial radio button state from localStorage
+    const radioButton = document.querySelector(\`input[name="calendar-months"][value="\${calendarMonths}"]\`);
+    if (radioButton) {
+      radioButton.checked = true;
+    }
+    
+    // Wire up radio button change events
+    document.querySelectorAll('input[name="calendar-months"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        setCalendarMonths(parseInt(e.target.value, 10));
+      });
+    });
+    
     loadCalendar();
   </script>
 </body>
