@@ -315,23 +315,30 @@ function getDashboard() {
     async function loadCalendar() {
       const container = document.getElementById('calendar-container');
       container.innerHTML = '<div class="loading">Loading calendar...</div>';
+      console.log('[calendar] loadCalendar called for property:', currentProperty);
 
       try {
         // Fetch booked dates from KV
+        console.log('[calendar] fetching /api/availability?slug=' + currentProperty);
         const bookedRes = await fetch(\`/api/availability?slug=\${currentProperty}\`);
+        console.log('[calendar] availability response:', bookedRes.status, bookedRes.statusText);
         if (!bookedRes.ok) {
           throw new Error(\`Failed to fetch availability: \${bookedRes.status} \${bookedRes.statusText}\`);
         }
         const bookedData = await bookedRes.json();
+        console.log('[calendar] availability data:', bookedData);
         if (!bookedData.ok) {
           throw new Error(\`Availability endpoint error: \${bookedData.error}\`);
         }
 
         // Fetch blocked dates from KV
+        console.log('[calendar] fetching /api/blocked-dates/status?slug=' + currentProperty);
         const blockedRes = await fetch(\`/api/blocked-dates/status?slug=\${currentProperty}\`);
+        console.log('[calendar] blocked-dates response:', blockedRes.status, blockedRes.statusText);
         let blockedData = { blocked: [] };
         if (blockedRes.ok) {
           const parsed = await blockedRes.json();
+          console.log('[calendar] blocked data:', parsed);
           if (parsed.ok) {
             blockedData = parsed;
           }
@@ -342,10 +349,11 @@ function getDashboard() {
           blocked: Array.isArray(blockedData.blocked) ? blockedData.blocked : []
         };
 
+        console.log('[calendar] combined calendar data:', calendarData);
         renderCalendar(container);
         hideError();
       } catch (err) {
-        console.error('Failed to load calendar:', err);
+        console.error('[calendar] Failed to load calendar:', err);
         showError('Failed to load calendar: ' + err.message);
         container.innerHTML = '<div class="error">Unable to load calendar. Check browser console for details.</div>';
       }
