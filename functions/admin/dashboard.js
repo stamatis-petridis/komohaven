@@ -317,17 +317,29 @@ function getDashboard() {
       container.innerHTML = '<div class="loading">Loading calendar...</div>';
 
       try {
-        // Fetch booked dates
+        // Fetch booked dates from KV
         const bookedRes = await fetch(\`/api/availability?slug=\${currentProperty}\`);
+        if (!bookedRes.ok) {
+          throw new Error(\`Failed to fetch availability: \${bookedRes.status} \${bookedRes.statusText}\`);
+        }
         const bookedData = await bookedRes.json();
+        if (!bookedData.ok) {
+          throw new Error(\`Availability endpoint error: \${bookedData.error}\`);
+        }
 
-        // Fetch blocked dates
+        // Fetch blocked dates from KV
         const blockedRes = await fetch(\`/api/blocked-dates/status?slug=\${currentProperty}\`);
-        const blockedData = blockedRes.status === 404 ? { blocked: [] } : await blockedRes.json();
+        let blockedData = { blocked: [] };
+        if (blockedRes.ok) {
+          const parsed = await blockedRes.json();
+          if (parsed.ok) {
+            blockedData = parsed;
+          }
+        }
 
         calendarData = {
-          booked: bookedData.booked || [],
-          blocked: blockedData.blocked || []
+          booked: Array.isArray(bookedData.booked) ? bookedData.booked : [],
+          blocked: Array.isArray(blockedData.blocked) ? blockedData.blocked : []
         };
 
         renderCalendar(container);
@@ -335,7 +347,7 @@ function getDashboard() {
       } catch (err) {
         console.error('Failed to load calendar:', err);
         showError('Failed to load calendar: ' + err.message);
-        container.innerHTML = '';
+        container.innerHTML = '<div class="error">Unable to load calendar. Check browser console for details.</div>';
       }
     }
 
@@ -549,8 +561,7 @@ function getDashboard() {
           body: JSON.stringify({
             slug: currentProperty,
             start: selectedRange.start,
-            end: selectedRange.end,
-            token: 'kh_blocked_dates_secret_2026'
+            end: selectedRange.end
           })
         });
 
@@ -581,8 +592,7 @@ function getDashboard() {
           body: JSON.stringify({
             slug: currentProperty,
             start: selectedRange.start,
-            end: selectedRange.end,
-            token: 'kh_blocked_dates_secret_2026'
+            end: selectedRange.end
           })
         });
 
