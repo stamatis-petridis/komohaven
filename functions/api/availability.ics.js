@@ -1,5 +1,6 @@
 // GET /api/availability.ics?slug=blue-dream&blocked-only=1&booked-only=1
 // Returns iCal (VEVENT) file with booked + blocked dates
+// Fetches fresh from platform iCals to preserve metadata
 // Query params:
 //   - blocked-only=1 : Only manual blocks
 //   - booked-only=1 : Only platform bookings
@@ -7,11 +8,6 @@
 export async function onRequest({ request, env }) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
-  }
-
-  const kv = env.AVAIL_KV;
-  if (!kv) {
-    return new Response("KV not available", { status: 500 });
   }
 
   const url = new URL(request.url);
@@ -25,27 +21,18 @@ export async function onRequest({ request, env }) {
   }
 
   try {
-    // Fetch booked dates
-    const bookedKey = `avail:${slug}:booked`;
-    const bookedRaw = await kv.get(bookedKey) || "[]";
-    const booked = JSON.parse(bookedRaw);
-
-    // Fetch blocked dates
-    const blockedKey = `blocked:${slug}:dates`;
-    const blockedRaw = await kv.get(blockedKey) || "[]";
-    const blocked = JSON.parse(blockedRaw);
-
-    // Filter based on query params
     let ranges = [];
 
+    // Fetch platform bookings (fresh from sources)
     if (!blockedOnly) {
-      // Include booked dates with source field
-      ranges.push(...booked.map(r => ({ ...r, type: "booked" })));
+      const bookedRanges = await fetchPlatformBookings(slug, env);
+      ranges.push(...bookedRanges);
     }
 
+    // Fetch manual blocks from KV
     if (!bookedOnly) {
-      // Include blocked dates (manual blocks have no source, mark as manual)
-      ranges.push(...blocked.map(r => ({ ...r, type: "blocked", source: "manual" })));
+      const blockedRanges = await fetchManualBlocks(slug, env);
+      ranges.push(...blockedRanges);
     }
 
     // Merge and sort
@@ -68,12 +55,149 @@ export async function onRequest({ request, env }) {
   }
 }
 
+async function fetchPlatformBookings(slug, env) {
+  const ranges = [];
+  
+  // Map slug to environment variables
+  const airbnbKey = slug === "blue-dream" ? "BLUE_DREAM_ICAL_URL_AIRBNB" : "STUDIO_9_ICAL_URL_AIRBNB";
+  const bookingKey = slug === "blue-dream" ? "BLUE_DREAM_ICAL_URL_BOOKING" : "STUDIO_9_ICAL_URL_BOOKING";
+  
+  // Fetch Airbnb
+  if (env[airbnbKey]) {
+    try {
+      const text = await fetch(env[airbnbKey]).then(r => r.text());
+      const events = parseICS(text);
+      ranges.push(...events.map(e => ({ ...e, type: "booked", source: "airbnb" })));
+    } catch (err) {
+      console.error(`Failed to fetch Airbnb iCal for ${slug}:`, err);
+    }
+  }
+  
+  // Fetch Booking
+  if (env[bookingKey]) {
+    try {
+      const text = await fetch(env[bookingKey]).then(r => r.text());
+      const events = parseICS(text);
+      ranges.push(...events.map(e => ({ ...e, type: "booked", source: "booking" })));
+    } catch (err) {
+      console.error(`Failed to fetch Booking iCal for ${slug}:`, err);
+    }
+  }
+  
+  return ranges;
+}
+
+async function fetchManualBlocks(slug, env) {
+  try {
+    const kv = env.AVAIL_KV;
+    if (!kv) return [];
+    
+    const blockedKey = `blocked:${slug}:dates`;
+    const blockedRaw = await kv.get(blockedKey) || "[]";
+    const blocked = JSON.parse(blockedRaw);
+    
+    return blocked.map(r => ({ ...r, type: "blocked", source: "manual" }));
+  } catch (err) {
+    console.error(`Failed to fetch manual blocks for ${slug}:`, err);
+    return [];
+  }
+}
+
 function normalizeSlug(value) {
   if (!value) return "";
   const raw = String(value).trim().toLowerCase();
   if (raw === "studio9" || raw === "studio-9") return "studio-9";
   if (raw === "blue-dream") return "blue-dream";
   return raw.replace(/\s+/g, "-");
+}
+
+function parseICS(text) {
+  const lines = unfold(text || "");
+  const events = [];
+  let current = {};
+  
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line === "BEGIN:VEVENT") {
+      current = {};
+    } else if (line === "END:VEVENT") {
+      if (current && !isCancelled(current)) {
+        const start = extractDate(current, "DTSTART");
+        const end = extractDate(current, "DTEND");
+        if (start && end && end > start) {
+          const event = { start, end };
+          
+          // Extract metadata from DESCRIPTION
+          const description = current.DESCRIPTION || "";
+          
+          const reservationMatch = description.match(/details\/([A-Z0-9]+)/);
+          if (reservationMatch) {
+            event.reservation_id = reservationMatch[1];
+          }
+          
+          const phoneMatch = description.match(/Phone[^:]*:\s*(.+?)(?:\n|$)/);
+          if (phoneMatch) {
+            event.phone = phoneMatch[1].trim();
+          }
+          
+          const urlMatch = description.match(/(https:\/\/[^\s\\]+)/);
+          if (urlMatch) {
+            event.reservation_url = urlMatch[1];
+          }
+          
+          events.push(event);
+        }
+      }
+      current = {};
+    } else {
+      const [k, v] = line.split(":", 2);
+      if (k && v) current[k] = v;
+    }
+  }
+  return events;
+}
+
+function unfold(text) {
+  const out = [];
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    if ((line.startsWith(" ") || line.startsWith("\t")) && out.length) {
+      out[out.length - 1] += line.slice(1);
+    } else {
+      out.push(line);
+    }
+  }
+  return out;
+}
+
+function isCancelled(event) {
+  return Object.keys(event).some((k) => k.startsWith("STATUS") && event[k] === "CANCELLED");
+}
+
+function extractDate(event, key) {
+  const entryKey = Object.keys(event).find((k) => k.split(";")[0] === key);
+  if (!entryKey) return null;
+  return normalizeDate(event[entryKey]);
+}
+
+function normalizeDate(value) {
+  const v = (value || "").trim();
+  if (!v) return null;
+  // Date-only
+  if (/^\d{8}$/.test(v)) {
+    return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
+  }
+  // Date-time (tolerate HHMM or HHMMSS with optional Z)
+  if (/^\d{8}T\d{4}Z?$/.test(v) || /^\d{8}T\d{6}Z?$/.test(v)) {
+    return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
+  }
+  // Fallback for ISO-like strings
+  const parsed = new Date(v);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function mergeRanges(ranges) {
@@ -87,12 +211,19 @@ function mergeRanges(ranges) {
     const last = merged[merged.length - 1];
 
     if (current.start <= last.end) {
-      // Overlapping - extend end date, keep first source encountered
+      // Overlapping - extend end date
       if (current.end > last.end) {
         last.end = current.end;
       }
-      if (current.source && !last.source) {
-        last.source = current.source;
+      // Keep metadata from first range
+      if (current.reservation_id && !last.reservation_id) {
+        last.reservation_id = current.reservation_id;
+      }
+      if (current.phone && !last.phone) {
+        last.phone = current.phone;
+      }
+      if (current.reservation_url && !last.reservation_url) {
+        last.reservation_url = current.reservation_url;
       }
     } else {
       merged.push(current);
@@ -102,13 +233,7 @@ function mergeRanges(ranges) {
   return merged;
 }
 
-function dateToIcalFormat(dateStr) {
-  // Convert YYYY-MM-DD to YYYYMMDD for iCal
-  return dateStr.replace(/-/g, "");
-}
-
 function getSummary(event) {
-  // Generate SUMMARY based on event type and source
   if (event.type === "booked") {
     if (event.source === "airbnb") return "Booked (Airbnb)";
     if (event.source === "booking") return "Booked (Booking.com)";
@@ -121,24 +246,20 @@ function getSummary(event) {
 }
 
 function getDescription(event) {
-  // Build description with all available metadata
   let desc = `Date range unavailable for booking (${event.type}`;
   
   if (event.source) {
     desc += ` - ${event.source}`;
   }
   
-  // Add reservation ID if available
   if (event.reservation_id) {
     desc += `\nReservation ID: ${event.reservation_id}`;
   }
   
-  // Add phone if available
   if (event.phone) {
     desc += `\nPhone: ${event.phone}`;
   }
   
-  // Add original reservation URL if available
   if (event.reservation_url) {
     desc += `\nURL: ${event.reservation_url}`;
   }
@@ -169,7 +290,6 @@ END:STANDARD
 END:VTIMEZONE
 `;
 
-  // Add VEVENT for each unavailable range
   ranges.forEach((range, idx) => {
     const dtStart = dateToIcalFormat(range.start);
     const dtEnd = dateToIcalFormat(range.end);
@@ -194,4 +314,8 @@ END:VEVENT
 `;
 
   return icalContent;
+}
+
+function dateToIcalFormat(dateStr) {
+  return dateStr.replace(/-/g, "");
 }
