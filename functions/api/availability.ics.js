@@ -156,7 +156,7 @@ function parseICS(text) {
       }
       current = {};
     } else {
-      const [k, v] = line.split(":", 2);
+      const colonIdx = line.indexOf(":");\n      const k = colonIdx >= 0 ? line.substring(0, colonIdx) : line;\n      const v = colonIdx >= 0 ? line.substring(colonIdx + 1) : "";
       if (k && v) current[k] = v;
     }
   }
