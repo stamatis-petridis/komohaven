@@ -130,7 +130,6 @@ async function syncProperty(prop, kv, env) {
     let ranges;
     try {
       ranges = normalizeRanges(parseICS(icsText));
-      ranges = ranges.map(r => ({ ...r, source }));
       allRanges.push(...ranges);
       feedsStatus[source].ok = true;
       successCount++;
@@ -344,36 +343,7 @@ function parseICS(text) {
         const start = extractDate(current, "DTSTART");
         const end = extractDate(current, "DTEND");
         if (start && end && end > start) {
-          const event = { start, end };
-          
-          // Extract reservation ID from DESCRIPTION or UID
-          const description = current.DESCRIPTION || "";
-          const reservationMatch = description.match(/details\/([A-Z0-9]+)/);
-          if (reservationMatch) {
-            event.reservation_id = reservationMatch[1];
-          }
-          
-          // Extract phone from DESCRIPTION
-          const phoneMatch = description.match(/Phone[^:]*:\s*(.+?)(?:\n|$)/);
-          if (phoneMatch) {
-            event.phone = phoneMatch[1].trim();
-          }
-          
-          // Extract reservation URL
-          const urlMatch = description.match(/(https:\/\/[^\s\\]+)/);
-          if (urlMatch) {
-            event.reservation_url = urlMatch[1];
-          }
-          
-          // Extract summary to determine if Reserved or Not available
-          const summary = (current.SUMMARY || "").toLowerCase();
-          if (summary.includes("reserved")) {
-            event.event_type = "reserved";
-          } else if (summary.includes("not available")) {
-            event.event_type = "blocked";
-          }
-          
-          events.push(event);
+          events.push({ start, end });
         }
       }
       current = {};
@@ -438,7 +408,7 @@ function formatUTC(date) {
 function normalizeRanges(ranges) {
   const sorted = (ranges || [])
     .filter((r) => r && r.start && r.end)
-    .map((r) => ({ start: r.start, end: r.end, source: r.source || null }))
+    .map((r) => ({ start: r.start, end: r.end }))
     .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
 
   const merged = [];
@@ -452,10 +422,6 @@ function normalizeRanges(ranges) {
       if (r.end > last.end) {
         last.end = r.end;
       }
-      // When ranges overlap, keep source from first range if not set
-      if (r.source && !last.source) {
-        last.source = r.source;
-      }
     } else {
       merged.push(r);
     }
@@ -465,7 +431,7 @@ function normalizeRanges(ranges) {
   const deduped = [];
   let prev = null;
   for (const r of merged) {
-    if (!prev || prev.start !== r.start || prev.end !== r.end || prev.source !== r.source) {
+    if (!prev || prev.start !== r.start || prev.end !== r.end) {
       deduped.push(r);
       prev = r;
     }

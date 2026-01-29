@@ -1,6 +1,8 @@
-// GET /api/availability.ics?slug=blue-dream
-// Returns iCal (VEVENT) file with merged booked + blocked dates
-// This feed can be imported into Airbnb/Booking to sync availability
+// GET /api/availability.ics?slug=blue-dream&blocked-only=1&booked-only=1
+// Returns iCal (VEVENT) file with booked + blocked dates
+// Query params:
+//   - blocked-only=1 : Only manual blocks
+//   - booked-only=1 : Only platform bookings
 
 export async function onRequest({ request, env }) {
   if (request.method !== "GET") {
@@ -15,6 +17,8 @@ export async function onRequest({ request, env }) {
   const url = new URL(request.url);
   const rawSlug = url.searchParams.get("slug") || "";
   const slug = normalizeSlug(rawSlug);
+  const blockedOnly = url.searchParams.get("blocked-only") === "1";
+  const bookedOnly = url.searchParams.get("booked-only") === "1";
 
   if (!slug || (slug !== "blue-dream" && slug !== "studio-9")) {
     return new Response("Invalid slug", { status: 400 });
@@ -31,9 +35,21 @@ export async function onRequest({ request, env }) {
     const blockedRaw = await kv.get(blockedKey) || "[]";
     const blocked = JSON.parse(blockedRaw);
 
-    // Merge booked + blocked
-    const allRanges = [...booked, ...blocked];
-    const merged = mergeRanges(allRanges);
+    // Filter based on query params
+    let ranges = [];
+
+    if (!blockedOnly) {
+      // Include booked dates with source field
+      ranges.push(...booked.map(r => ({ ...r, type: "booked" })));
+    }
+
+    if (!bookedOnly) {
+      // Include blocked dates (manual blocks have no source, mark as manual)
+      ranges.push(...blocked.map(r => ({ ...r, type: "blocked", source: "manual" })));
+    }
+
+    // Merge and sort
+    const merged = mergeRanges(ranges);
 
     // Convert to iCal format
     const ical = generateIcal(slug, merged);
@@ -71,7 +87,13 @@ function mergeRanges(ranges) {
     const last = merged[merged.length - 1];
 
     if (current.start <= last.end) {
-      last.end = current.end > last.end ? current.end : last.end;
+      // Overlapping - extend end date, keep first source encountered
+      if (current.end > last.end) {
+        last.end = current.end;
+      }
+      if (current.source && !last.source) {
+        last.source = current.source;
+      }
     } else {
       merged.push(current);
     }
@@ -83,6 +105,46 @@ function mergeRanges(ranges) {
 function dateToIcalFormat(dateStr) {
   // Convert YYYY-MM-DD to YYYYMMDD for iCal
   return dateStr.replace(/-/g, "");
+}
+
+function getSummary(event) {
+  // Generate SUMMARY based on event type and source
+  if (event.type === "booked") {
+    if (event.source === "airbnb") return "Booked (Airbnb)";
+    if (event.source === "booking") return "Booked (Booking.com)";
+    return "Booked";
+  }
+  if (event.type === "blocked") {
+    return "Blocked (Your manual blocks)";
+  }
+  return "Unavailable";
+}
+
+function getDescription(event) {
+  // Build description with all available metadata
+  let desc = `Date range unavailable for booking (${event.type}`;
+  
+  if (event.source) {
+    desc += ` - ${event.source}`;
+  }
+  
+  // Add reservation ID if available
+  if (event.reservation_id) {
+    desc += `\nReservation ID: ${event.reservation_id}`;
+  }
+  
+  // Add phone if available
+  if (event.phone) {
+    desc += `\nPhone: ${event.phone}`;
+  }
+  
+  // Add original reservation URL if available
+  if (event.reservation_url) {
+    desc += `\nURL: ${event.reservation_url}`;
+  }
+  
+  desc += ")";
+  return desc;
 }
 
 function generateIcal(slug, ranges) {
@@ -111,15 +173,17 @@ END:VTIMEZONE
   ranges.forEach((range, idx) => {
     const dtStart = dateToIcalFormat(range.start);
     const dtEnd = dateToIcalFormat(range.end);
-    const uid = `${slug}-blocked-${idx}-${now}@komohaven.pages.dev`;
+    const uid = `${slug}-${range.type}-${idx}-${now}@komohaven.pages.dev`;
+    const summary = getSummary(range);
+    const description = getDescription(range);
 
     icalContent += `BEGIN:VEVENT
 UID:${uid}
 DTSTAMP:${now}
 DTSTART;VALUE=DATE:${dtStart}
 DTEND;VALUE=DATE:${dtEnd}
-SUMMARY:Unavailable
-DESCRIPTION:Date range unavailable for booking
+SUMMARY:${summary}
+DESCRIPTION:${description}
 TRANSP:OPAQUE
 STATUS:CONFIRMED
 END:VEVENT
