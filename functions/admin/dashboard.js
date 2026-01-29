@@ -360,6 +360,7 @@ function getDashboard() {
     }
 
     function renderCalendar(container) {
+      console.log('[calendar] renderCalendar() called, calendarData:', calendarData);
       container.innerHTML = '';
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -428,6 +429,7 @@ function getDashboard() {
       }
 
       container.appendChild(calendarGrid);
+      console.log('[calendar] calendar grid appended to container, grid HTML length:', calendarGrid.innerHTML.length);
       updateButtons();
     }
 
@@ -619,6 +621,7 @@ function getDashboard() {
     }
 
     function updateButtons() {
+      console.log('[calendar] updateButtons called');
       const hasSelection = selectedRange.start && selectedRange.end;
       document.getElementById('block-btn').disabled = !hasSelection;
       document.getElementById('unblock-btn').disabled = !hasSelection;
