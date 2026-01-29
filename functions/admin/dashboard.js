@@ -430,6 +430,7 @@ function getDashboard() {
 
       container.appendChild(calendarGrid);
       console.log('[calendar] calendar grid appended to container, grid HTML length:', calendarGrid.innerHTML.length);
+      container.classList.remove('loading');
       updateButtons();
     }
 
