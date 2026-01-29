@@ -404,8 +404,8 @@ function getDashboard() {
       }
     }
 
-    function renderCalendar(container) {
-      console.log('[calendar] renderCalendar() called, calendarData:', calendarData);
+    function renderCalendar(container, { months = 3 } = {}) {
+      console.log('[calendar] renderCalendar() called with', months, 'months, calendarData:', calendarData);
       container.innerHTML = '';
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -413,7 +413,7 @@ function getDashboard() {
       const calendarGrid = document.createElement('div');
       calendarGrid.className = 'calendar-grid';
 
-      for (let offset = 0; offset < 3; offset++) {
+      for (let offset = 0; offset < months; offset++) {
         const monthDate = new Date(today.getFullYear(), today.getMonth() + offset, 1);
         const monthCard = document.createElement('div');
         monthCard.className = 'calendar-month';
