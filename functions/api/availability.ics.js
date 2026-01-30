@@ -127,25 +127,11 @@ function parseICS(text) {
         if (start && end && end > start) {
           const event = { start, end };
           
-          // Extract metadata from DESCRIPTION
+          // Extract ONLY reservation ID from DESCRIPTION
           const description = current.DESCRIPTION || "";
-          
-          // Extract reservation ID from URL (format: /details/HMHKN8Q5AF)
-          const resMatch = description.match(/\/details\/([A-Z0-9]+)/);
-          if (resMatch) {
-            event.reservation_id = resMatch[1];
-          }
-          
-          // Extract phone number (after "Phone Number (Last 4 Digits): ")
-          const phoneMatch = description.match(/Phone[^:]*:\s*(.+?)(?:\\n|$)/);
-          if (phoneMatch) {
-            event.phone = phoneMatch[1].trim();
-          }
-          
-          // Extract full URL
-          const urlMatch = description.match(/(https:\/\/[^\s\\]+)/);
-          if (urlMatch) {
-            event.reservation_url = urlMatch[1];
+          const reservationMatch = description.match(/\/details\/([A-Z0-9]+)/);
+          if (reservationMatch) {
+            event.reservation_id = reservationMatch[1];
           }
           
           events.push(event);
@@ -186,15 +172,12 @@ function extractDate(event, key) {
 function normalizeDate(value) {
   const v = (value || "").trim();
   if (!v) return null;
-  // Date-only
   if (/^\d{8}$/.test(v)) {
     return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
   }
-  // Date-time (tolerate HHMM or HHMMSS with optional Z)
   if (/^\d{8}T\d{4}Z?$/.test(v) || /^\d{8}T\d{6}Z?$/.test(v)) {
     return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
   }
-  // Fallback for ISO-like strings
   const parsed = new Date(v);
   if (Number.isNaN(parsed.getTime())) return null;
   const year = parsed.getUTCFullYear();
@@ -214,19 +197,12 @@ function mergeRanges(ranges) {
     const last = merged[merged.length - 1];
 
     if (current.start <= last.end) {
-      // Overlapping - extend end date
       if (current.end > last.end) {
         last.end = current.end;
       }
-      // Keep metadata from first range
+      // Keep reservation_id from first range if not set
       if (current.reservation_id && !last.reservation_id) {
         last.reservation_id = current.reservation_id;
-      }
-      if (current.phone && !last.phone) {
-        last.phone = current.phone;
-      }
-      if (current.reservation_url && !last.reservation_url) {
-        last.reservation_url = current.reservation_url;
       }
     } else {
       merged.push(current);
@@ -249,18 +225,14 @@ function getSummary(event) {
 }
 
 function getDescription(event) {
-  let desc = `Date range unavailable (${event.type} - ${event.source}`;
+  let desc = `Date range unavailable for booking (${event.type}`;
+  
+  if (event.source) {
+    desc += ` - ${event.source}`;
+  }
   
   if (event.reservation_id) {
-    desc += `\nReservation: ${event.reservation_id}`;
-  }
-  
-  if (event.phone) {
-    desc += `\nPhone: ${event.phone}`;
-  }
-  
-  if (event.reservation_url) {
-    desc += `\nURL: ${event.reservation_url}`;
+    desc += `\nReservation ID: ${event.reservation_id}`;
   }
   
   desc += ")";

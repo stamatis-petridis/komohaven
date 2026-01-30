@@ -27,20 +27,9 @@ function parseICS(text) {
           const event = { start, end };
           
           const description = current.DESCRIPTION || "";
-          
           const reservationMatch = description.match(/\/details\/([A-Z0-9]+)/);
           if (reservationMatch) {
             event.reservation_id = reservationMatch[1];
-          }
-          
-          const phoneMatch = description.match(/Phone Number[^:]*:\s*(.+?)(?:\n|\\n|$)/);
-          if (phoneMatch) {
-            event.phone = phoneMatch[1].trim();
-          }
-          
-          const urlMatch = description.match(/(https:\/\/[^\s\\n]+)/);
-          if (urlMatch) {
-            event.reservation_url = urlMatch[1];
           }
           
           events.push(event);
