@@ -130,23 +130,20 @@ function parseICS(text) {
           // Extract metadata from DESCRIPTION
           const description = current.DESCRIPTION || "";
           
-          // Handle literal \n and fold continuation
-          const cleanDesc = description.replace(/\\n/g, "\n");
-          
-          // Extract reservation ID
-          const reservationMatch = cleanDesc.match(/details\/([A-Z0-9]+)/);
+          // Extract reservation ID from URL pattern
+          const reservationMatch = description.match(/\/details\/([A-Z0-9]+)/);
           if (reservationMatch) {
             event.reservation_id = reservationMatch[1];
           }
           
-          // Extract phone (handle various formats)
-          const phoneMatch = cleanDesc.match(/Phone[^:]*:\s*(.+?)(?:\n|$)/i);
+          // Extract phone (after "Phone Number (Last 4 Digits): ")
+          const phoneMatch = description.match(/Phone Number[^:]*:\s*(.+?)(?:\n|\\n|$)/);
           if (phoneMatch) {
             event.phone = phoneMatch[1].trim();
           }
           
-          // Extract reservation URL
-          const urlMatch = cleanDesc.match(/(https:\/\/[^\s\n\\]+)/);
+          // Extract full reservation URL
+          const urlMatch = description.match(/(https:\/\/[^\s\\n]+)/);
           if (urlMatch) {
             event.reservation_url = urlMatch[1];
           }
@@ -156,12 +153,13 @@ function parseICS(text) {
       }
       current = {};
     } else {
-      const colonIdx = line.indexOf(":");\n      const k = colonIdx >= 0 ? line.substring(0, colonIdx) : line;\n      const v = colonIdx >= 0 ? line.substring(colonIdx + 1) : "";
+      const [k, v] = line.split(":", 2);
       if (k && v) current[k] = v;
     }
   }
   return events;
 }
+
 
 function unfold(text) {
   const out = [];
