@@ -130,20 +130,20 @@ function parseICS(text) {
           // Extract metadata from DESCRIPTION
           const description = current.DESCRIPTION || "";
           
-          // Extract reservation ID from URL pattern
-          const reservationMatch = description.match(/\/details\/([A-Z0-9]+)/);
-          if (reservationMatch) {
-            event.reservation_id = reservationMatch[1];
+          // Extract reservation ID from URL (format: /details/HMHKN8Q5AF)
+          const resMatch = description.match(/\/details\/([A-Z0-9]+)/);
+          if (resMatch) {
+            event.reservation_id = resMatch[1];
           }
           
-          // Extract phone (after "Phone Number (Last 4 Digits): ")
-          const phoneMatch = description.match(/Phone Number[^:]*:\s*(.+?)(?:\n|\\n|$)/);
+          // Extract phone number (after "Phone Number (Last 4 Digits): ")
+          const phoneMatch = description.match(/Phone[^:]*:\s*(.+?)(?:\\n|$)/);
           if (phoneMatch) {
             event.phone = phoneMatch[1].trim();
           }
           
-          // Extract full reservation URL
-          const urlMatch = description.match(/(https:\/\/[^\s\\n]+)/);
+          // Extract full URL
+          const urlMatch = description.match(/(https:\/\/[^\s\\]+)/);
           if (urlMatch) {
             event.reservation_url = urlMatch[1];
           }
@@ -159,7 +159,6 @@ function parseICS(text) {
   }
   return events;
 }
-
 
 function unfold(text) {
   const out = [];
@@ -250,14 +249,10 @@ function getSummary(event) {
 }
 
 function getDescription(event) {
-  let desc = `Date range unavailable for booking (${event.type}`;
-  
-  if (event.source) {
-    desc += ` - ${event.source}`;
-  }
+  let desc = `Date range unavailable (${event.type} - ${event.source}`;
   
   if (event.reservation_id) {
-    desc += `\nReservation ID: ${event.reservation_id}`;
+    desc += `\nReservation: ${event.reservation_id}`;
   }
   
   if (event.phone) {
